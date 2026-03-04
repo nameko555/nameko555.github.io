@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>配信者向けルーレットUI（MVP）</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div id="stage">
+      <header class="topbar">
+        <div class="topbar__left">
+          <div class="appTitle">配信者向けルーレットUI（MVP）</div>
+          <div class="status" id="status">起動中…</div>
+        </div>
+        <div class="topbar__right">
+          <div class="pill" id="statePill">idle</div>
+          <div class="warn" id="audioWarn" title="音が有効化できませんでした" aria-hidden="true">🔇</div>
+        </div>
+      </header>
+
+      <div class="layout">
+        <!-- LEFT -->
+        <section class="panel" aria-label="管理">
+          <h2>候補管理</h2>
+          <div class="mini" id="candidateSummary">抽選対象: 0件（Load未）</div>
+
+          <label class="field">
+            <div class="field__label">入力（下書き / Loadで確定）</div>
+            <textarea id="draft" rows="10" placeholder="1行につき1候補\n空行は無視 / 前後スペースはtrim"></textarea>
+            <div class="field__help">下書きは自動保存（500msデバウンス）。抽選対象はLoad確定済みのみ。</div>
+          </label>
+
+          <div class="row">
+            <button id="loadBtn" class="primary">Load（対象に反映）</button>
+          </div>
+
+          <div class="row">
+            <button id="clearCandidatesBtn" class="danger longpress" data-longpress="2000">
+              候補を全消去（長押し2秒）
+              <span class="lpBar" aria-hidden="true"></span>
+            </button>
+          </div>
+        </section>
+
+        <!-- CENTER -->
+        <section class="center" aria-label="ルーレット">
+          <div class="wheelWrap">
+            <canvas id="wheel" width="820" height="820" aria-label="wheel"></canvas>
+            <div class="needle" aria-hidden="true"></div>
+            <div class="centerHud mode-idle" aria-live="polite">
+              <div class="hudLabel">針下</div>
+              <div class="hudValue" id="underNeedle">—</div>
+              <div class="hudWinner" id="winner">—</div>
+            </div>
+            <div class="hudFlashOverlay" id="hudFlash" aria-hidden="true"></div>
+            <div id="cropGuide" class="cropGuide" aria-hidden="true">
+              <div class="cropGuide__label">Safe area (2% inset) — OBSはこの枠内をクロップ推奨</div>
+            </div>
+          </div>
+
+          <button id="spinBtn" class="spin">SPIN（5秒固定）</button>
+          <div class="hint" id="startupHint" hidden>
+            <div class="hint__title">OBS取り込みメモ</div>
+            <div class="hint__body">この画面は16:9固定です。OBSは「内側枠（Safe area）」をクロップ推奨。</div>
+            <div class="hint__actions">
+              <button id="hideHintBtn" class="ghost">閉じる</button>
+              <label class="toggle small"><input id="dontShowHint" type="checkbox" /> 次回から表示しない</label>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT -->
+        <section class="panel" aria-label="履歴・設定">
+          <h2>履歴</h2>
+          <ol class="history" id="history"></ol>
+          <div class="row">
+            <button id="clearHistoryBtn" class="danger longpress" data-longpress="2000">
+              履歴を全消去（長押し2秒）
+              <span class="lpBar" aria-hidden="true"></span>
+            </button>
+          </div>
+
+          <h2 class="mt">設定</h2>
+          <label class="toggle"><input id="soundToggle" type="checkbox" /> SE</label>
+          <label class="field">
+            <div class="field__label">音量</div>
+            <input id="volume" type="range" min="0" max="1" step="0.01" value="0.3" />
+          </label>
+          <label class="toggle"><input id="cropToggle" type="checkbox" /> クロップガイド表示</label>
+          <label class="toggle"><input id="debugToggle" type="checkbox" /> デバッグ表示</label>
+
+          <div class="debug" id="debug" hidden></div>
+        </section>
+      </div>
+
+      <div class="toastWrap" id="toasts" aria-live="polite"></div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
