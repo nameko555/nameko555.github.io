@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLC Toolbox</title>
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-hover: #0369a1;
+            --bg-color: #f1f5f9;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border: #cbd5e1;
+            --danger: #ef4444;
+            --success: #22c55e;
+            --warning: #f59e0b;
+            --info: #2563eb;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            background-color: var(--card-bg);
+            max-width: 1200px;
+            width: 100%;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .tabs {
+            display: flex;
+            background-color: #e2e8f0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .tabs::-webkit-scrollbar { display: none; }
+
+        .tab-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            border: none;
+            background: none;
+            font-weight: bold;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .tab-btn:hover { background-color: #cbd5e1; }
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            background-color: var(--card-bg);
+        }
+
+        .tab-content {
+            display: none;
+            padding: 24px;
+            animation: fadeIn 0.3s;
+        }
+        .tab-content.active { display: block; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+            font-weight: bold;
+            color: var(--text-muted);
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: monospace;
+            background-color: #fff;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+        }
+
+        button {
+            font: inherit;
+        }
+
+        .box {
+            background-color: #f8fafc;
+            padding: 16px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            margin-bottom: 16px;
+        }
+
+        .result-text {
+            font-size: 1.05rem;
+            font-weight: bold;
+            color: var(--primary);
+            word-break: break-all;
+            font-family: monospace;
+        }
+
+        .hint {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+        }
+
+        .status {
+            margin-top: 14px;
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background-color: #f8fafc;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+        .status.ok {
+            border-color: #bfdbfe;
+            background-color: #eff6ff;
+            color: #1d4ed8;
+        }
+        .status.warning {
+            border-color: #fde68a;
+            background-color: #fffbeb;
+            color: #92400e;
+        }
+        .status.error {
+            border-color: #fecaca;
+            background-color: #fef2f2;
+            color: #b91c1c;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: left;
+            font-size: 0.95rem;
+            vertical-align: middle;
+        }
+
+        th { background-color: #f1f5f9; }
+
+        .bit-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .bit-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 4px;
+        }
+
+        .bit-box {
+            flex: 1;
+            aspect-ratio: 1;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            background-color: #f1f5f9;
+            user-select: none;
+            transition: background-color 0.1s;
+        }
+        .bit-box.on {
+            background-color: var(--success);
+            color: white;
+            border-color: #16a34a;
+        }
+        .bit-label {
+            font-size: 0.6rem;
+            opacity: 0.7;
+        }
+        .bit-val {
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .progress-bar-container {
+            width: 100%;
+            height: 12px;
+            background-color: var(--border);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            height: 100%;
+            background-color: var(--success);
+            width: 0%;
+            transition: width 0.3s, background-color 0.2s;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 10px;
+        }
+        .preset-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 12px;
+            background-color: var(--primary);
+            color: #fff;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .preset-btn:hover { background-color: var(--primary-hover); }
+
+        .text-danger { color: var(--danger); font-weight: bold; }
+        .text-success { color: var(--success); font-weight: bold; }
+        .mono { font-family: monospace; }
+
+        textarea {
+            width: 100%;
+            min-height: 88px;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: monospace;
+            background-color: #fff;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.1);
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .inline-actions {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .action-btn {
+            border: none;
+            border-radius: 6px;
+            padding: 9px 12px;
+            background-color: #0f172a;
+            color: #fff;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+
+        .action-btn:hover {
+            opacity: 0.9;
+        }
+
+        .ghost-btn {
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 9px 12px;
+            background-color: #fff;
+            color: var(--text-main);
+            cursor: pointer;
+        }
+
+        .result-block {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 14px;
+            font-family: monospace;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-break: break-all;
+            white-space: pre-wrap;
+        }
+
+        .table-wrap {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .subtle {
+            color: var(--text-muted);
+            font-size: 0.85rem;
+        }
+
+        .pill-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            border: 1px solid var(--border);
+            background-color: #f8fafc;
+        }
+
+        .pill.ok {
+            background-color: #ecfdf5;
+            border-color: #bbf7d0;
+            color: #15803d;
+        }
+
+        .pill.warning {
+            background-color: #fffbeb;
+            border-color: #fde68a;
+            color: #b45309;
+        }
+
+        .pill.error {
+            background-color: #fef2f2;
+            border-color: #fecaca;
+            color: #b91c1c;
+        }
+
+        @media (max-width: 900px) {
+            .grid-4 { grid-template-columns: 1fr 1fr; }
+        }
+
+
+        @media (max-width: 600px) {
+            .grid-2, .grid-3 { grid-template-columns: 1fr; }
+            .bit-val { font-size: 0.8rem; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>PLC Toolbox</h1>
+
+    <div class="tabs" role="tablist" aria-label="PLC Toolbox機能一覧">
+        <button type="button" class="tab-btn active" data-tab="tab-scale" aria-selected="true">スケーリング</button>
+        <button type="button" class="tab-btn" data-tab="tab-bit" aria-selected="false">16/32Bit ビューア</button>
+        <button type="button" class="tab-btn" data-tab="tab-float" aria-selected="false">Float変換</button>
+        <button type="button" class="tab-btn" data-tab="tab-modbus" aria-selected="false">Modbus計算</button>
+        <button type="button" class="tab-btn" data-tab="tab-ip" aria-selected="false">IP/サブネット</button>
+
+        <button type="button" class="tab-btn" data-tab="tab-modbus-frame" aria-selected="false">Modbusフレーム</button>
+        <button type="button" class="tab-btn" data-tab="tab-datacenter" aria-selected="false">データ型変換</button>
+        <button type="button" class="tab-btn" data-tab="tab-alarm" aria-selected="false">アナログ警報</button>
+    </div>
+
+    <div id="tab-scale" class="tab-content active">
+        <div class="box">
+            <div class="preset-buttons">
+                <button type="button" class="preset-btn scale-preset" data-amin="4" data-amax="20" data-dmin="0" data-dmax="4000" data-sigunit="mA">信号 4-20mA / PLC 0-4000</button>
+                <button type="button" class="preset-btn scale-preset" data-amin="4" data-amax="20" data-dmin="0" data-dmax="27648" data-sigunit="mA">信号 4-20mA / PLC 0-27648</button>
+                <button type="button" class="preset-btn scale-preset" data-amin="0" data-amax="10" data-dmin="0" data-dmax="4000" data-sigunit="V">信号 0-10V / PLC 0-4000</button>
+            </div>
+            <div class="grid-3">
+                <div><label for="s_aMin">入力信号最小</label><input type="number" id="s_aMin" value="4"></div>
+                <div><label for="s_aMax">入力信号最大</label><input type="number" id="s_aMax" value="20"></div>
+                <div><label for="s_sigUnit">入力信号単位</label><input type="text" id="s_sigUnit" value="mA" placeholder="例: mA / V"></div>
+
+                <div><label for="s_pvMin">計測対象最小</label><input type="number" id="s_pvMin" value="0"></div>
+                <div><label for="s_pvMax">計測対象最大</label><input type="number" id="s_pvMax" value="100"></div>
+                <div><label for="s_pvUnit">計測単位</label><input type="text" id="s_pvUnit" placeholder="例: ℃ / MPa / %"></div>
+
+                <div><label for="s_dMin">PLC生値最小</label><input type="number" id="s_dMin" value="0"></div>
+                <div><label for="s_dMax">PLC生値最大</label><input type="number" id="s_dMax" value="4000"></div>
+                <div>
+                    <label>補足</label>
+                    <div class="subtle">プリセットは入力信号レンジと PLC 生値レンジを設定します。計測対象レンジは用途に合わせて設定してください。</div>
+                </div>
+            </div>
+            <div class="hint">線形スケーリングです。計測値 (PV) ・入力信号・PLC生値のどれを入力しても残りを相互換算します。</div>
+        </div>
+        <div class="box" style="background-color: #eff6ff; border-color: #bfdbfe;">
+            <div class="grid-3">
+                <div><label for="s_pvVal">計測値 (PV)</label><input type="number" id="s_pvVal" inputmode="decimal" placeholder="例: 25"></div>
+                <div><label for="s_aVal">入力信号</label><input type="number" id="s_aVal" inputmode="decimal" placeholder="例: 8"></div>
+                <div><label for="s_dVal">PLC生値</label><input type="number" id="s_dVal" inputmode="decimal" placeholder="例: 1000"></div>
+            </div>
+            <div id="s_status" class="status">計測値 / 入力信号 / PLC生値のいずれかを入力してください。</div>
+            <div class="progress-bar-container"><div class="progress-bar" id="s_bar"></div></div>
+        </div>
+    </div>
+
+    <div id="tab-bit" class="tab-content">
+        <div class="box grid-3">
+            <div><label for="b_dec">10進数 (Decimal)</label><input type="text" id="b_dec" inputmode="numeric"></div>
+            <div><label for="b_hex">16進数 (Hex)</label><input type="text" id="b_hex" placeholder="例: FFFF0001"></div>
+            <div><label for="b_bin">2進数 (Binary)</label><input type="text" id="b_bin" placeholder="例: 00000000000000000000000000000001"></div>
+        </div>
+        <div id="b_status" class="status">10進・16進・2進のいずれかを入力すると相互変換されます。</div>
+        <div class="box">
+            <label style="margin-bottom: 10px;">ビット操作 (クリックでON/OFF)</label>
+            <div class="bit-container" id="bit-container"></div>
+        </div>
+    </div>
+
+    <div id="tab-float" class="tab-content">
+        <div class="box grid-2">
+            <div>
+                <label for="f_float">実数 (Float 32bit)</label>
+                <input type="number" step="any" id="f_float" placeholder="例: 123.45">
+            </div>
+            <div>
+                <label for="f_hex">16進数 (Big Endian ABCD)</label>
+                <input type="text" id="f_hex" placeholder="例: 42F6E666" maxlength="10">
+            </div>
+        </div>
+        <div id="f_status" class="status">実数または8桁の16進数を入力してください。</div>
+        <div class="box">
+            <label>異機種間エンディアン変換結果 (Hex表示)</label>
+            <table>
+                <tr><th>並び順</th><th>フォーマット名</th><th>16進数データ</th></tr>
+                <tr><td>A B C D</td><td>Big Endian (標準)</td><td id="f_abcd" class="result-text">-</td></tr>
+                <tr><td>D C B A</td><td>Little Endian</td><td id="f_dcba" class="result-text">-</td></tr>
+                <tr><td>B A D C</td><td>Byte Swap</td><td id="f_badc" class="result-text">-</td></tr>
+                <tr><td>C D A B</td><td>Word Swap</td><td id="f_cdab" class="result-text">-</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-modbus" class="tab-content">
+        <div class="box grid-2">
+            <div><label for="m_hex">Modbus アドレス (16進数オフセット)</label><input type="text" id="m_hex" placeholder="例: 0100"></div>
+            <div><label for="m_dec">Modbus アドレス (10進数オフセット)</label><input type="text" id="m_dec" placeholder="例: 256" inputmode="numeric"></div>
+        </div>
+        <div id="m_status" class="status">0〜65535 のオフセット値として計算します。</div>
+        <div class="box">
+            <label>汎用レジスタ表記</label>
+            <table>
+                <tr><th>種別</th><th>0-based (機器依存)</th><th>1-based (標準表記)</th></tr>
+                <tr><td>Coil (0x)</td><td id="m_0x_0">-</td><td id="m_0x_1">-</td></tr>
+                <tr><td>Discrete Input (1x)</td><td id="m_1x_0">-</td><td id="m_1x_1">-</td></tr>
+                <tr><td>Input Register (3x)</td><td id="m_3x_0">-</td><td id="m_3x_1">-</td></tr>
+                <tr><td>Holding Register (4x)</td><td id="m_4x_0">-</td><td id="m_4x_1">-</td></tr>
+            </table>
+            <p class="hint">※PLCやタッチパネル側の仕様に合わせて0/1ベースを使い分けてください。</p>
+        </div>
+    </div>
+
+    <div id="tab-ip" class="tab-content">
+        <div class="box grid-2">
+            <div><label for="i_ip">IPアドレス</label><input type="text" id="i_ip" value="192.168.1.50" placeholder="例: 192.168.1.50"></div>
+            <div>
+                <label for="i_cidr">サブネットマスク (CIDR)</label>
+                <select id="i_cidr"></select>
+            </div>
+        </div>
+        <div id="i_status" class="status">IPv4/CIDR を入力するとネットワーク情報を計算します。</div>
+        <div class="box">
+            <table>
+                <tr><th>項目</th><th>値</th></tr>
+                <tr><td>サブネットマスク</td><td id="i_mask" class="result-text">-</td></tr>
+                <tr><td>ネットワークアドレス</td><td id="i_net" class="result-text">-</td></tr>
+                <tr><td>ブロードキャスト</td><td id="i_broad" class="result-text">-</td></tr>
+                <tr><td>設定可能IP範囲</td><td id="i_range" class="result-text" style="color: var(--success);">-</td></tr>
+                <tr><td>ホスト数</td><td id="i_hosts">-</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-modbus-frame" class="tab-content">
+        <div class="box">
+            <div class="grid-4">
+                <div>
+                    <label for="mf_mode">通信方式</label>
+                    <select id="mf_mode">
+                        <option value="rtu">Modbus RTU</option>
+                        <option value="tcp">Modbus TCP</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="mf_tid">Transaction ID (TCP)</label>
+                    <input type="text" id="mf_tid" value="1" placeholder="例: 1 または 0x0001">
+                </div>
+                <div>
+                    <label for="mf_unit">Unit / Slave ID</label>
+                    <input type="text" id="mf_unit" value="1" placeholder="例: 1">
+                </div>
+                <div>
+                    <label for="mf_fc">Function Code</label>
+                    <select id="mf_fc">
+                        <option value="1">01 Read Coils</option>
+                        <option value="2">02 Read Discrete Inputs</option>
+                        <option value="3" selected>03 Read Holding Registers</option>
+                        <option value="4">04 Read Input Registers</option>
+                        <option value="5">05 Write Single Coil</option>
+                        <option value="6">06 Write Single Register</option>
+                        <option value="15">0F Write Multiple Coils</option>
+                        <option value="16">10 Write Multiple Registers</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="mf_addr">開始アドレス</label>
+                    <input type="text" id="mf_addr" value="0" placeholder="例: 0 または 0x0100">
+                </div>
+                <div>
+                    <label for="mf_qty">数量</label>
+                    <input type="text" id="mf_qty" value="2" placeholder="例: 2">
+                </div>
+                <div style="grid-column: span 2;">
+                    <label for="mf_values">書込値 / データ</label>
+                    <input type="text" id="mf_values" placeholder="例: 123,456 / 1,0,1,1 / ON / 0xFF00">
+                </div>
+            </div>
+            <div id="mf_status" class="status">読取・書込条件を入力すると Modbus RTU/TCP の要求フレームを自動生成します。</div>
+            <div class="hint">開始アドレス・数量・値は 10進または 16進 (0x付き / A-F含む) で入力できます。0F/10 は入力値の個数から数量を自動決定します。</div>
+        </div>
+
+        <div class="box">
+            <label>生成された要求フレーム</label>
+            <div id="mf_request" class="result-block">-</div>
+            <table>
+                <tr><th>項目</th><th>内容</th></tr>
+                <tr><td>方式</td><td id="mf_b_transport">-</td></tr>
+                <tr><td>Function</td><td id="mf_b_fc">-</td></tr>
+                <tr><td>開始アドレス</td><td id="mf_b_addr">-</td></tr>
+                <tr><td>数量 / 値</td><td id="mf_b_qty">-</td></tr>
+                <tr><td>PDU</td><td id="mf_b_pdu" class="mono">-</td></tr>
+                <tr><td>チェック情報</td><td id="mf_b_check">-</td></tr>
+            </table>
+        </div>
+
+        <div class="box">
+            <div class="grid-2">
+                <div>
+                    <label for="mf_parse_mode">解析方式</label>
+                    <select id="mf_parse_mode">
+                        <option value="auto" selected>Auto 判定</option>
+                        <option value="rtu">Modbus RTU</option>
+                        <option value="tcp">Modbus TCP</option>
+                    </select>
+                </div>
+                <div>
+                    <label for="mf_parse_raw">受信 / 解析したいフレーム</label>
+                    <textarea id="mf_parse_raw" placeholder="例: 01 03 00 00 00 02 C4 0B&#10;例: 00 01 00 00 00 06 01 03 00 00 00 02"></textarea>
+                </div>
+            </div>
+            <div id="mf_parse_status" class="status">生フレームを入力すると Unit ID / Function / 開始アドレス / 数量 / CRC/MBAP を解析します。</div>
+            <table>
+                <tr><th>項目</th><th>内容</th></tr>
+                <tr><td>方式</td><td id="mf_r_transport">-</td></tr>
+                <tr><td>Unit / Slave ID</td><td id="mf_r_unit">-</td></tr>
+                <tr><td>Function</td><td id="mf_r_fc">-</td></tr>
+                <tr><td>解釈</td><td id="mf_r_kind">-</td></tr>
+                <tr><td>開始アドレス</td><td id="mf_r_addr">-</td></tr>
+                <tr><td>数量 / 値</td><td id="mf_r_qty">-</td></tr>
+                <tr><td>データ</td><td id="mf_r_data">-</td></tr>
+                <tr><td>チェック</td><td id="mf_r_check">-</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-datacenter" class="tab-content">
+        <div class="box">
+            <label style="margin-bottom: 10px;">16bit ワード変換</label>
+            <div class="grid-3">
+                <div><label for="d16_hex">Hex (16bit)</label><input type="text" id="d16_hex" placeholder="例: 1234"></div>
+                <div><label for="d16_uint">UINT16</label><input type="text" id="d16_uint" placeholder="0〜65535"></div>
+                <div><label for="d16_int">INT16</label><input type="text" id="d16_int" placeholder="-32768〜32767"></div>
+            </div>
+            <div id="d16_status" class="status">Hex / UINT16 / INT16 のどれかを入力してください。</div>
+            <table>
+                <tr><th>項目</th><th>値</th></tr>
+                <tr><td>Binary</td><td id="d16_bin" class="mono">-</td></tr>
+                <tr><td>BCD 解釈</td><td id="d16_bcd">-</td></tr>
+                <tr><td>ASCII (2文字)</td><td id="d16_ascii" class="mono">-</td></tr>
+            </table>
+        </div>
+
+        <div class="box">
+            <label style="margin-bottom: 10px;">32bit ダブルワード変換</label>
+            <div class="grid-4">
+                <div><label for="d32_hex">Hex (32bit)</label><input type="text" id="d32_hex" placeholder="例: 42F6E666"></div>
+                <div>
+                    <label for="d32_order">並び順</label>
+                    <select id="d32_order">
+                        <option value="ABCD">ABCD (標準)</option>
+                        <option value="DCBA">DCBA</option>
+                        <option value="BADC">BADC</option>
+                        <option value="CDAB">CDAB</option>
+                    </select>
+                </div>
+                <div><label for="d32_uint">UDINT / UINT32</label><input type="text" id="d32_uint" placeholder="0〜4294967295"></div>
+                <div><label for="d32_int">DINT / INT32</label><input type="text" id="d32_int" placeholder="-2147483648〜2147483647"></div>
+            </div>
+            <div class="grid-2">
+                <div><label for="d32_float">REAL / Float32</label><input type="number" step="any" id="d32_float" placeholder="例: 123.45"></div>
+                <div><label>補足</label><div class="subtle">Hex 入力時は「現在の並び順」で解釈し、内部で ABCD に正規化してから数値へ変換します。</div></div>
+            </div>
+            <div id="d32_status" class="status">Hex / UDINT / DINT / REAL のどれかを入力してください。</div>
+            <table>
+                <tr><th>項目</th><th>値</th></tr>
+                <tr><td>正規化 ABCD</td><td id="d32_abcd" class="mono">-</td></tr>
+                <tr><td>High Word / Low Word</td><td id="d32_words" class="mono">-</td></tr>
+                <tr><td>ASCII (表示並び)</td><td id="d32_ascii" class="mono">-</td></tr>
+                <tr><td>Binary</td><td id="d32_bin" class="mono">-</td></tr>
+            </table>
+        </div>
+
+        <div class="box">
+            <label style="margin-bottom: 10px;">64bit クアッドワード変換</label>
+            <div class="grid-2">
+                <div><label for="d64_hex">Hex (64bit)</label><input type="text" id="d64_hex" placeholder="例: 405EDD2F1A9FBE77"></div>
+                <div><label for="d64_float">LREAL / Float64</label><input type="text" id="d64_float" placeholder="例: 123.456"></div>
+                <div><label for="d64_uint">ULINT / UINT64</label><input type="text" id="d64_uint" placeholder="0〜18446744073709551615"></div>
+                <div><label for="d64_int">LINT / INT64</label><input type="text" id="d64_int" placeholder="-9223372036854775808〜9223372036854775807"></div>
+            </div>
+            <div id="d64_status" class="status">Hex / ULINT / LINT / LREAL のどれかを入力してください。</div>
+            <table>
+                <tr><th>項目</th><th>値</th></tr>
+                <tr><td>ASCII (8文字)</td><td id="d64_ascii" class="mono">-</td></tr>
+                <tr><td>High/Low 32bit</td><td id="d64_words" class="mono">-</td></tr>
+            </table>
+        </div>
+    </div>
+
+    <div id="tab-alarm" class="tab-content">
+        <div class="box">
+            <div class="inline-actions">
+                <button type="button" class="preset-btn alarm-preset" data-amin="4" data-amax="20" data-dmin="0" data-dmax="4000" data-sigunit="mA">信号 4-20mA / PLC 0-4000</button>
+                <button type="button" class="preset-btn alarm-preset" data-amin="4" data-amax="20" data-dmin="0" data-dmax="27648" data-sigunit="mA">信号 4-20mA / PLC 0-27648</button>
+                <button type="button" class="preset-btn alarm-preset" data-amin="0" data-amax="10" data-dmin="0" data-dmax="4000" data-sigunit="V">信号 0-10V / PLC 0-4000</button>
+                <button type="button" class="ghost-btn" id="alarm-copy-scale">スケーリング条件をコピー</button>
+            </div>
+            <div class="grid-3" style="margin-top: 12px;">
+                <div><label for="al_aMin">入力信号最小</label><input type="number" id="al_aMin" value="4"></div>
+                <div><label for="al_aMax">入力信号最大</label><input type="number" id="al_aMax" value="20"></div>
+                <div><label for="al_sigUnit">入力信号単位</label><input type="text" id="al_sigUnit" value="mA" placeholder="例: mA / V"></div>
+
+                <div><label for="al_pMin">計測対象最小</label><input type="number" id="al_pMin" value="0"></div>
+                <div><label for="al_pMax">計測対象最大</label><input type="number" id="al_pMax" value="100"></div>
+                <div><label for="al_pvUnit">計測単位</label><input type="text" id="al_pvUnit" placeholder="例: ℃ / MPa / %"></div>
+
+                <div><label for="al_dMin">PLC生値最小</label><input type="number" id="al_dMin" value="0"></div>
+                <div><label for="al_dMax">PLC生値最大</label><input type="number" id="al_dMax" value="4000"></div>
+                <div>
+                    <label>補足</label>
+                    <div class="subtle">HH / H / L / LL は計測対象値で設定し、Wire Break は入力信号値で設定します。</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="box">
+            <div class="grid-4">
+                <div><label for="al_hh">HH (計測値)</label><input type="number" step="any" id="al_hh" placeholder="例: 90"></div>
+                <div><label for="al_h">H (計測値)</label><input type="number" step="any" id="al_h" placeholder="例: 80"></div>
+                <div><label for="al_l">L (計測値)</label><input type="number" step="any" id="al_l" placeholder="例: 20"></div>
+                <div><label for="al_ll">LL (計測値)</label><input type="number" step="any" id="al_ll" placeholder="例: 10"></div>
+                <div><label for="al_hyst">ヒステリシス (計測値)</label><input type="number" step="any" id="al_hyst" value="1"></div>
+                <div><label for="al_wire">Wire Break (入力信号)</label><input type="number" step="any" id="al_wire" placeholder="例: 3.6"></div>
+                <div><label for="al_wireHyst">Wire Break 復帰ヒステリシス (入力信号)</label><input type="number" step="any" id="al_wireHyst" value="0.2"></div>
+                <div>
+                    <label>補足</label>
+                    <div class="subtle">4-20mA の断線判定なら 3.6mA など、通常信号レンジ外を設定する想定です。</div>
+                </div>
+            </div>
+            <div id="al_status" class="status">HH / H / L / LL は計測値、Wire Break は入力信号として入力してください。</div>
+            <div class="table-wrap">
+                <table>
+                    <tr><th>警報</th><th>動作点 (計測値)</th><th>動作点 (入力信号)</th><th>動作点 (PLC)</th><th>復帰点 (計測値)</th><th>復帰点 (入力信号)</th><th>復帰点 (PLC)</th></tr>
+                    <tr><td>HH</td><td id="al_hh_trip">-</td><td id="al_hh_trip_s">-</td><td id="al_hh_trip_d">-</td><td id="al_hh_reset">-</td><td id="al_hh_reset_s">-</td><td id="al_hh_reset_d">-</td></tr>
+                    <tr><td>H</td><td id="al_h_trip">-</td><td id="al_h_trip_s">-</td><td id="al_h_trip_d">-</td><td id="al_h_reset">-</td><td id="al_h_reset_s">-</td><td id="al_h_reset_d">-</td></tr>
+                    <tr><td>L</td><td id="al_l_trip">-</td><td id="al_l_trip_s">-</td><td id="al_l_trip_d">-</td><td id="al_l_reset">-</td><td id="al_l_reset_s">-</td><td id="al_l_reset_d">-</td></tr>
+                    <tr><td>LL</td><td id="al_ll_trip">-</td><td id="al_ll_trip_s">-</td><td id="al_ll_trip_d">-</td><td id="al_ll_reset">-</td><td id="al_ll_reset_s">-</td><td id="al_ll_reset_d">-</td></tr>
+                    <tr><td>Wire Break</td><td id="al_wire_trip">-</td><td id="al_wire_trip_s">-</td><td id="al_wire_trip_d">-</td><td id="al_wire_reset">-</td><td id="al_wire_reset_s">-</td><td id="al_wire_reset_d">-</td></tr>
+                </table>
+            </div>
+        </div>
+
+        <div class="box" style="background-color: #eff6ff; border-color: #bfdbfe;">
+            <div class="grid-3">
+                <div><label for="al_pv_pv">現在値 (計測値)</label><input type="number" step="any" id="al_pv_pv" placeholder="例: 25"></div>
+                <div><label for="al_pv_a">現在値 (入力信号)</label><input type="number" step="any" id="al_pv_a" placeholder="例: 8"></div>
+                <div><label for="al_pv_d">現在値 (PLC生値)</label><input type="number" step="any" id="al_pv_d" placeholder="例: 1000"></div>
+            </div>
+            <div id="al_live_status" class="status">現在値を入力すると、どの警報が動作するか即時評価します。</div>
+            <div id="al_live_tags" class="pill-list"></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    const $ = (id) => document.getElementById(id);
+
+    function setStatus(id, message, type = '') {
+        const el = $(id);
+        el.textContent = message;
+        el.className = `status${type ? ` ${type}` : ''}`;
+    }
+
+    function setStatusHTML(id, html, type = '') {
+        const el = $(id);
+        el.innerHTML = html;
+        el.className = `status${type ? ` ${type}` : ''}`;
+    }
+
+    function formatNumber(value, digits = 6) {
+        if (!Number.isFinite(value)) return String(value);
+        if (Object.is(value, -0)) return '-0';
+        return Number(value.toFixed(digits)).toString();
+    }
+
+    function sanitizeHex(raw) {
+        return raw.trim().replace(/^0x/i, '').replace(/\s+/g, '').toUpperCase();
+    }
+
+    function resetText(id, value = '-') {
+        $(id).textContent = value;
+    }
+
+    function openTab(tabId, buttonEl = null) {
+        document.querySelectorAll('.tab-content').forEach((el) => el.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach((el) => {
+            el.classList.remove('active');
+            el.setAttribute('aria-selected', 'false');
+        });
+
+        $(tabId).classList.add('active');
+        const targetBtn = buttonEl || document.querySelector(`.tab-btn[data-tab="${tabId}"]`);
+        if (targetBtn) {
+            targetBtn.classList.add('active');
+            targetBtn.setAttribute('aria-selected', 'true');
+        }
+    }
+
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+        btn.addEventListener('click', () => openTab(btn.dataset.tab, btn));
+    });
+
+    let s_lastEdited = 'pv';
+
+    function getTextValue(id) {
+        return $(id).value.trim();
+    }
+
+    function formatValueWithUnit(value, unit = '', digits = 6) {
+        const rendered = formatNumber(value, digits);
+        return unit ? `${rendered} ${unit}` : rendered;
+    }
+
+    function linearRatio(value, min, max) {
+        return (value - min) / (max - min);
+    }
+
+    function linearValue(ratio, min, max) {
+        return ratio * (max - min) + min;
+    }
+
+    function getScalingConfig() {
+        const sigMin = Number($('s_aMin').value);
+        const sigMax = Number($('s_aMax').value);
+        const pvMin = Number($('s_pvMin').value);
+        const pvMax = Number($('s_pvMax').value);
+        const dmin = Number($('s_dMin').value);
+        const dmax = Number($('s_dMax').value);
+        const sigUnit = getTextValue('s_sigUnit');
+        const pvUnit = getTextValue('s_pvUnit');
+
+        if (![sigMin, sigMax, pvMin, pvMax, dmin, dmax].every(Number.isFinite)) {
+            return { error: '入力信号レンジ・計測対象レンジ・PLC生値レンジを数値で入力してください。' };
+        }
+        if (sigMin === sigMax) {
+            return { error: '入力信号の最小値と最大値は同じにできません。' };
+        }
+        if (pvMin === pvMax) {
+            return { error: '計測対象の最小値と最大値は同じにできません。' };
+        }
+        if (dmin === dmax) {
+            return { error: 'PLC生値の最小値と最大値は同じにできません。' };
+        }
+        return { sigMin, sigMax, pvMin, pvMax, dmin, dmax, sigUnit, pvUnit };
+    }
+
+    function signalToDigital(value, cfg) {
+        return Math.round(linearRatio(value, cfg.sigMin, cfg.sigMax) * (cfg.dmax - cfg.dmin) + cfg.dmin);
+    }
+
+    function digitalToSignal(value, cfg) {
+        return linearValue(linearRatio(value, cfg.dmin, cfg.dmax), cfg.sigMin, cfg.sigMax);
+    }
+
+    function signalToPV(value, cfg) {
+        return linearValue(linearRatio(value, cfg.sigMin, cfg.sigMax), cfg.pvMin, cfg.pvMax);
+    }
+
+    function pvToSignal(value, cfg) {
+        return linearValue(linearRatio(value, cfg.pvMin, cfg.pvMax), cfg.sigMin, cfg.sigMax);
+    }
+
+    function digitalToPV(value, cfg) {
+        return signalToPV(digitalToSignal(value, cfg), cfg);
+    }
+
+    function pvToDigital(value, cfg) {
+        return signalToDigital(pvToSignal(value, cfg), cfg);
+    }
+
+    function resetScaleBar() {
+        const bar = $('s_bar');
+        bar.style.width = '0%';
+        bar.style.backgroundColor = 'var(--success)';
+    }
+
+    function setScaling(sigMin, sigMax, dmin, dmax, sigUnit = '') {
+        $('s_aMin').value = sigMin;
+        $('s_aMax').value = sigMax;
+        $('s_dMin').value = dmin;
+        $('s_dMax').value = dmax;
+        if (sigUnit) $('s_sigUnit').value = sigUnit;
+        calcScale(s_lastEdited);
+    }
+
+    function updateScaleUI(ratio, pvValue, signalValue, digitalValue, cfg) {
+        const percent = ratio * 100;
+        const bar = $('s_bar');
+        bar.style.width = `${Math.max(0, Math.min(100, percent))}%`;
+
+        const signalLowerBound = Math.min(cfg.sigMin, cfg.sigMax);
+        const summary = `計測値: ${formatValueWithUnit(pvValue, cfg.pvUnit)} / 入力信号: ${formatValueWithUnit(signalValue, cfg.sigUnit)} / PLC生値: ${digitalValue}`;
+
+        if (percent > 100) {
+            bar.style.backgroundColor = 'var(--danger)';
+            setStatusHTML('s_status', `PVレンジ比: ${percent.toFixed(1)}%<br><span class="text-danger">⚠️ オーバーレンジ</span><br>${summary}`, 'warning');
+            return;
+        }
+        if (percent < 0) {
+            bar.style.backgroundColor = 'var(--warning)';
+            const wireBreak = signalValue < signalLowerBound && signalLowerBound > 0
+                ? '<br><span class="text-danger">🚨 入力信号が下限未満のため、断線の可能性があります。</span>'
+                : '';
+            setStatusHTML('s_status', `PVレンジ比: ${percent.toFixed(1)}%<br><span style="color:var(--warning);font-weight:bold;">⚠️ アンダーレンジ</span>${wireBreak}<br>${summary}`, 'warning');
+            return;
+        }
+
+        bar.style.backgroundColor = 'var(--success)';
+        setStatusHTML('s_status', `PVレンジ比: ${percent.toFixed(1)}%<br>${summary}`, 'ok');
+    }
+
+    function calcScale(edited = s_lastEdited) {
+        s_lastEdited = edited;
+        const cfg = getScalingConfig();
+        if (cfg.error) {
+            resetScaleBar();
+            setStatus('s_status', cfg.error, 'error');
+            return;
+        }
+
+        let source = edited;
+        const pvRaw = getTextValue('s_pvVal');
+        const signalRaw = getTextValue('s_aVal');
+        const digitalRaw = getTextValue('s_dVal');
+
+        if (source === 'pv' && pvRaw === '') source = signalRaw !== '' ? 'a' : 'd';
+        if (source === 'a' && signalRaw === '') source = pvRaw !== '' ? 'pv' : 'd';
+        if (source === 'd' && digitalRaw === '') source = pvRaw !== '' ? 'pv' : 'a';
+
+        if (pvRaw === '' && signalRaw === '' && digitalRaw === '') {
+            resetScaleBar();
+            setStatus('s_status', '計測値 / 入力信号 / PLC生値のいずれかを入力してください。', '');
+            return;
+        }
+
+        let ratio;
+        let pvValue;
+        let signalValue;
+        let digitalValue;
+
+        if (source === 'pv') {
+            pvValue = Number(pvRaw);
+            if (!Number.isFinite(pvValue)) {
+                resetScaleBar();
+                setStatus('s_status', '計測値 (PV) が不正です。', 'error');
+                return;
+            }
+            ratio = linearRatio(pvValue, cfg.pvMin, cfg.pvMax);
+            signalValue = pvToSignal(pvValue, cfg);
+            digitalValue = pvToDigital(pvValue, cfg);
+        } else if (source === 'a') {
+            signalValue = Number(signalRaw);
+            if (!Number.isFinite(signalValue)) {
+                resetScaleBar();
+                setStatus('s_status', '入力信号が不正です。', 'error');
+                return;
+            }
+            ratio = linearRatio(signalValue, cfg.sigMin, cfg.sigMax);
+            pvValue = signalToPV(signalValue, cfg);
+            digitalValue = signalToDigital(signalValue, cfg);
+        } else {
+            digitalValue = Number(digitalRaw);
+            if (!Number.isFinite(digitalValue)) {
+                resetScaleBar();
+                setStatus('s_status', 'PLC生値が不正です。', 'error');
+                return;
+            }
+            ratio = linearRatio(digitalValue, cfg.dmin, cfg.dmax);
+            signalValue = digitalToSignal(digitalValue, cfg);
+            pvValue = digitalToPV(digitalValue, cfg);
+            digitalValue = Math.round(digitalValue);
+        }
+
+        $('s_pvVal').value = formatNumber(pvValue, 6);
+        $('s_aVal').value = formatNumber(signalValue, 6);
+        $('s_dVal').value = String(digitalValue);
+        updateScaleUI(ratio, pvValue, signalValue, digitalValue, cfg);
+    }
+
+    document.querySelectorAll('.scale-preset').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            setScaling(
+                Number(btn.dataset.amin),
+                Number(btn.dataset.amax),
+                Number(btn.dataset.dmin),
+                Number(btn.dataset.dmax),
+                btn.dataset.sigunit || ''
+            );
+        });
+    });
+
+    ['s_aMin', 's_aMax', 's_sigUnit', 's_pvMin', 's_pvMax', 's_pvUnit', 's_dMin', 's_dMax'].forEach((id) => {
+        $(id).addEventListener('input', () => calcScale(s_lastEdited));
+    });
+    $('s_pvVal').addEventListener('input', () => calcScale('pv'));
+    $('s_aVal').addEventListener('input', () => calcScale('a'));
+    $('s_dVal').addEventListener('input', () => calcScale('d'));
+
+    let bitValue = 0 >>> 0;
+    const bitContainer = $('bit-container');
+
+    function createBitUI() {
+        bitContainer.innerHTML = '';
+        for (let r = 0; r < 2; r += 1) {
+            const row = document.createElement('div');
+            row.className = 'bit-row';
+
+            for (let i = 15; i >= 0; i -= 1) {
+                const bitNum = r === 0 ? i + 16 : i;
+                const box = document.createElement('div');
+                box.className = 'bit-box';
+                box.id = `bit_${bitNum}`;
+                box.innerHTML = `<span class="bit-label">${bitNum}</span><span class="bit-val">0</span>`;
+                box.addEventListener('click', () => toggleBit(bitNum));
+                row.appendChild(box);
+            }
+            bitContainer.appendChild(row);
+        }
+    }
+
+    function toggleBit(n) {
+        bitValue = (bitValue ^ (1 << n)) >>> 0;
+        updateBitUI();
+        setStatus('b_status', `Bit ${n} を切り替えました。`, 'ok');
+    }
+
+    function parseBitInput(type, raw) {
+        if (raw === '') {
+            return { ok: true, value: 0, empty: true };
+        }
+
+        if (type === 'dec') {
+            if (!/^\d+$/.test(raw)) {
+                return { ok: false, error: '10進数は 0〜4294967295 の整数で入力してください。' };
+            }
+            const num = Number(raw);
+            if (!Number.isInteger(num) || num < 0 || num > 4294967295) {
+                return { ok: false, error: '10進数は 0〜4294967295 の範囲で入力してください。' };
+            }
+            return { ok: true, value: num >>> 0 };
+        }
+
+        if (type === 'hex') {
+            const cleaned = sanitizeHex(raw);
+            if (!/^[0-9A-F]{1,8}$/.test(cleaned)) {
+                return { ok: false, error: '16進数は 1〜8 桁の [0-9A-F] で入力してください。' };
+            }
+            return { ok: true, value: Number.parseInt(cleaned, 16) >>> 0, display: cleaned };
+        }
+
+        const cleaned = raw.replace(/[\s_]/g, '');
+        if (!/^[01]{1,32}$/.test(cleaned)) {
+            return { ok: false, error: '2進数は 1〜32 桁の 0/1 で入力してください。' };
+        }
+        return { ok: true, value: Number.parseInt(cleaned, 2) >>> 0, display: cleaned };
+    }
+
+    function updateFromText(type) {
+        const input = $(`b_${type}`);
+        const parsed = parseBitInput(type, input.value.trim());
+        if (!parsed.ok) {
+            setStatus('b_status', parsed.error, 'error');
+            return;
+        }
+
+        if (type === 'hex' && parsed.display) input.value = parsed.display;
+        if (type === 'bin' && parsed.display) input.value = parsed.display;
+
+        bitValue = parsed.value;
+        updateBitUI(type);
+        setStatus('b_status', parsed.empty ? '0 にリセットしました。' : '相互変換しました。', 'ok');
+    }
+
+    function updateBitUI(skipInput) {
+        if (skipInput !== 'dec') $('b_dec').value = String(bitValue);
+        if (skipInput !== 'hex') $('b_hex').value = bitValue.toString(16).toUpperCase().padStart(8, '0');
+        if (skipInput !== 'bin') $('b_bin').value = bitValue.toString(2).padStart(32, '0');
+
+        for (let i = 0; i < 32; i += 1) {
+            const isOn = ((bitValue >>> i) & 1) === 1;
+            const box = $(`bit_${i}`);
+            if (!box) continue;
+            box.className = `bit-box${isOn ? ' on' : ''}`;
+            box.querySelector('.bit-val').textContent = isOn ? '1' : '0';
+        }
+    }
+
+    $('b_dec').addEventListener('input', () => updateFromText('dec'));
+    $('b_hex').addEventListener('input', () => updateFromText('hex'));
+    $('b_bin').addEventListener('input', () => updateFromText('bin'));
+
+    function clearFloatOutputs() {
+        ['f_abcd', 'f_dcba', 'f_badc', 'f_cdab'].forEach((id) => resetText(id));
+    }
+
+    function renderFloatFromBuffer(buffer) {
+        const bytes = Array.from(new Uint8Array(buffer));
+        const hex = bytes.map((b) => b.toString(16).padStart(2, '0').toUpperCase());
+        $('f_abcd').textContent = `${hex[0]}${hex[1]}${hex[2]}${hex[3]}`;
+        $('f_dcba').textContent = `${hex[3]}${hex[2]}${hex[1]}${hex[0]}`;
+        $('f_badc').textContent = `${hex[1]}${hex[0]}${hex[3]}${hex[2]}`;
+        $('f_cdab').textContent = `${hex[2]}${hex[3]}${hex[0]}${hex[1]}`;
+    }
+
+    function calcFloat(source) {
+        const buffer = new ArrayBuffer(4);
+        const view = new DataView(buffer);
+        const floatInput = $('f_float');
+        const hexInput = $('f_hex');
+
+        if (source === 'float') {
+            const raw = floatInput.value.trim();
+            if (raw === '') {
+                hexInput.value = '';
+                clearFloatOutputs();
+                setStatus('f_status', '実数または8桁の16進数を入力してください。', '');
+                return;
+            }
+
+            const value = Number(raw);
+            if (!Number.isFinite(value)) {
+                clearFloatOutputs();
+                setStatus('f_status', 'Float値が不正です。', 'error');
+                return;
+            }
+
+            view.setFloat32(0, value, false);
+            const hexStr = Array.from(new Uint8Array(buffer)).map((b) => b.toString(16).padStart(2, '0').toUpperCase()).join('');
+            hexInput.value = hexStr;
+            renderFloatFromBuffer(buffer);
+            setStatus('f_status', 'Float → Hex 変換を実行しました。', 'ok');
+            return;
+        }
+
+        const cleaned = sanitizeHex(hexInput.value);
+        hexInput.value = cleaned;
+
+        if (cleaned === '') {
+            floatInput.value = '';
+            clearFloatOutputs();
+            setStatus('f_status', '実数または8桁の16進数を入力してください。', '');
+            return;
+        }
+
+        if (!/^[0-9A-F]*$/.test(cleaned)) {
+            floatInput.value = '';
+            clearFloatOutputs();
+            setStatus('f_status', '16進数は [0-9A-F] のみ使用できます。', 'error');
+            return;
+        }
+
+        if (cleaned.length !== 8) {
+            floatInput.value = '';
+            clearFloatOutputs();
+            setStatus('f_status', '16進数は8桁で入力してください。', 'warning');
+            return;
+        }
+
+        view.setUint32(0, Number.parseInt(cleaned, 16), false);
+        floatInput.value = formatNumber(view.getFloat32(0, false), 10);
+        renderFloatFromBuffer(buffer);
+        setStatus('f_status', 'Hex → Float 変換を実行しました。', 'ok');
+    }
+
+    $('f_float').addEventListener('input', () => calcFloat('float'));
+    $('f_hex').addEventListener('input', () => calcFloat('hex'));
+
+    function resetModbusTable() {
+        ['m_0x_0', 'm_0x_1', 'm_1x_0', 'm_1x_1', 'm_3x_0', 'm_3x_1', 'm_4x_0', 'm_4x_1'].forEach((id) => resetText(id));
+    }
+
+    function calcModbus(source) {
+        const hexInput = $('m_hex');
+        const decInput = $('m_dec');
+        let decVal;
+
+        if (source === 'hex') {
+            const cleaned = sanitizeHex(hexInput.value);
+            hexInput.value = cleaned;
+
+            if (cleaned === '') {
+                decInput.value = '';
+                resetModbusTable();
+                setStatus('m_status', '0〜65535 のオフセット値として計算します。', '');
+                return;
+            }
+            if (!/^[0-9A-F]{1,4}$/.test(cleaned)) {
+                resetModbusTable();
+                setStatus('m_status', '16進数は 1〜4 桁の [0-9A-F] で入力してください。', 'error');
+                return;
+            }
+
+            decVal = Number.parseInt(cleaned, 16);
+            decInput.value = String(decVal);
+        } else {
+            const raw = decInput.value.trim();
+            if (raw === '') {
+                hexInput.value = '';
+                resetModbusTable();
+                setStatus('m_status', '0〜65535 のオフセット値として計算します。', '');
+                return;
+            }
+            if (!/^\d+$/.test(raw)) {
+                resetModbusTable();
+                setStatus('m_status', '10進数は 0〜65535 の整数で入力してください。', 'error');
+                return;
+            }
+
+            decVal = Number(raw);
+            if (!Number.isInteger(decVal) || decVal < 0 || decVal > 65535) {
+                resetModbusTable();
+                setStatus('m_status', '10進数は 0〜65535 の範囲で入力してください。', 'error');
+                return;
+            }
+
+            hexInput.value = decVal.toString(16).toUpperCase().padStart(4, '0');
+        }
+
+        resetText('m_0x_0', '0' + String(decVal).padStart(4, '0'));
+        resetText('m_0x_1', '0' + String(decVal + 1).padStart(4, '0'));
+        resetText('m_1x_0', '1' + String(decVal).padStart(4, '0'));
+        resetText('m_1x_1', '1' + String(decVal + 1).padStart(4, '0'));
+        resetText('m_3x_0', '3' + String(decVal).padStart(4, '0'));
+        resetText('m_3x_1', '3' + String(decVal + 1).padStart(4, '0'));
+        resetText('m_4x_0', '4' + String(decVal).padStart(4, '0'));
+        resetText('m_4x_1', '4' + String(decVal + 1).padStart(4, '0'));
+        setStatus('m_status', `オフセット ${decVal} (0x${decVal.toString(16).toUpperCase().padStart(4, '0')}) を基準に表記を作成しました。`, 'ok');
+    }
+
+    $('m_hex').addEventListener('input', () => calcModbus('hex'));
+    $('m_dec').addEventListener('input', () => calcModbus('dec'));
+
+    function populateCIDROptions() {
+        const select = $('i_cidr');
+        select.innerHTML = '';
+        for (let i = 32; i >= 8; i -= 1) {
+            const option = document.createElement('option');
+            option.value = String(i);
+            option.textContent = `/${i}`;
+            if (i === 24) option.selected = true;
+            select.appendChild(option);
+        }
+    }
+
+    function parseIPv4(ipStr) {
+        const parts = ipStr.trim().split('.');
+        if (parts.length !== 4) return null;
+
+        const nums = [];
+        for (const part of parts) {
+            if (!/^\d{1,3}$/.test(part)) return null;
+            const num = Number(part);
+            if (!Number.isInteger(num) || num < 0 || num > 255) return null;
+            nums.push(num);
+        }
+        return nums;
+    }
+
+    function toIPv4(num) {
+        return [
+            (num >>> 24) & 255,
+            (num >>> 16) & 255,
+            (num >>> 8) & 255,
+            num & 255
+        ].join('.');
+    }
+
+    function resetIPTable() {
+        ['i_mask', 'i_net', 'i_broad', 'i_range', 'i_hosts'].forEach((id) => resetText(id));
+    }
+
+    function calcIP() {
+        const ipRaw = $('i_ip').value.trim();
+        const cidr = Number($('i_cidr').value);
+
+        if (ipRaw === '') {
+            resetIPTable();
+            setStatus('i_status', 'IPv4/CIDR を入力するとネットワーク情報を計算します。', '');
+            return;
+        }
+
+        const ipParts = parseIPv4(ipRaw);
+        if (!ipParts) {
+            resetIPTable();
+            setStatus('i_status', 'IPアドレスは IPv4 形式 (例: 192.168.1.50) で入力してください。', 'error');
+            return;
+        }
+
+        if (!Number.isInteger(cidr) || cidr < 8 || cidr > 32) {
+            resetIPTable();
+            setStatus('i_status', 'CIDR は /8〜/32 の範囲で選択してください。', 'error');
+            return;
+        }
+
+        const ipInt = (((ipParts[0] << 24) >>> 0) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3]) >>> 0;
+        const maskInt = cidr === 0 ? 0 : (0xFFFFFFFF << (32 - cidr)) >>> 0;
+        const netInt = (ipInt & maskInt) >>> 0;
+        const broadInt = (netInt | (~maskInt >>> 0)) >>> 0;
+
+        resetText('i_mask', toIPv4(maskInt));
+        resetText('i_net', toIPv4(netInt));
+        resetText('i_broad', toIPv4(broadInt));
+
+        let hosts;
+        let rangeText;
+        let statusMessage = 'IPv4/CIDR を計算しました。';
+        let statusType = 'ok';
+
+        if (cidr === 32) {
+            hosts = 1;
+            rangeText = toIPv4(ipInt);
+            statusMessage = '/32 は単一ホストです。';
+        } else if (cidr === 31) {
+            hosts = 2;
+            rangeText = `${toIPv4(netInt)} ～ ${toIPv4(broadInt)}`;
+            statusMessage = '/31 はポイントツーポイント用途として 2 アドレスを扱います。';
+        } else {
+            hosts = (2 ** (32 - cidr)) - 2;
+            rangeText = `${toIPv4((netInt + 1) >>> 0)} ～ ${toIPv4((broadInt - 1) >>> 0)}`;
+            if (ipInt === netInt) {
+                statusMessage = '入力IPはネットワークアドレスです。通常のホスト設定には使えません。';
+                statusType = 'warning';
+            } else if (ipInt === broadInt) {
+                statusMessage = '入力IPはブロードキャストアドレスです。通常のホスト設定には使えません。';
+                statusType = 'warning';
+            }
+        }
+
+        resetText('i_range', rangeText);
+        resetText('i_hosts', `${hosts.toLocaleString()} 台`);
+        setStatus('i_status', statusMessage, statusType);
+    }
+
+    $('i_ip').addEventListener('input', calcIP);
+    $('i_cidr').addEventListener('change', calcIP);
+
+
+    const MODBUS_FUNCTION_LABELS = {
+        1: '01 Read Coils',
+        2: '02 Read Discrete Inputs',
+        3: '03 Read Holding Registers',
+        4: '04 Read Input Registers',
+        5: '05 Write Single Coil',
+        6: '06 Write Single Register',
+        15: '0F Write Multiple Coils',
+        16: '10 Write Multiple Registers'
+    };
+
+    const MODBUS_EXCEPTION_LABELS = {
+        1: 'Illegal Function',
+        2: 'Illegal Data Address',
+        3: 'Illegal Data Value',
+        4: 'Slave Device Failure',
+        5: 'Acknowledge',
+        6: 'Slave Device Busy',
+        8: 'Memory Parity Error',
+        10: 'Gateway Path Unavailable',
+        11: 'Gateway Target Device Failed to Respond'
+    };
+
+    const BYTE_ORDER_MAPS_32 = {
+        ABCD: [0, 1, 2, 3],
+        DCBA: [3, 2, 1, 0],
+        BADC: [1, 0, 3, 2],
+        CDAB: [2, 3, 0, 1]
+    };
+
+    function bytesToHex(bytes) {
+        return bytes.map((b) => Number(b).toString(16).toUpperCase().padStart(2, '0')).join(' ');
+    }
+
+    function normalizeHexBytes(raw) {
+        const cleaned = raw.trim().replace(/^0x/i, '').replace(/[^0-9A-Fa-f]/g, '').toUpperCase();
+        if (cleaned === '') return { ok: true, bytes: [], cleaned: '' };
+        if (cleaned.length % 2 !== 0) {
+            return { ok: false, error: 'Hex フレームは偶数桁で入力してください。' };
+        }
+        if (!/^[0-9A-F]+$/.test(cleaned)) {
+            return { ok: false, error: 'Hex フレームは [0-9A-F] で入力してください。' };
+        }
+        const bytes = [];
+        for (let i = 0; i < cleaned.length; i += 2) {
+            bytes.push(Number.parseInt(cleaned.slice(i, i + 2), 16));
+        }
+        return { ok: true, bytes, cleaned };
+    }
+
+    function parseUnsignedInput(raw, max, label) {
+        const text = raw.trim();
+        if (text === '') return { ok: false, error: `${label}を入力してください。` };
+
+        let value;
+        if (/^0x/i.test(text) || /[A-Fa-f]/.test(text)) {
+            const cleaned = sanitizeHex(text);
+            if (!/^[0-9A-F]+$/.test(cleaned)) {
+                return { ok: false, error: `${label}は 10進または 16進で入力してください。` };
+            }
+            value = Number.parseInt(cleaned, 16);
+        } else {
+            if (!/^\d+$/.test(text)) {
+                return { ok: false, error: `${label}は整数で入力してください。` };
+            }
+            value = Number(text);
+        }
+
+        if (!Number.isInteger(value) || value < 0 || value > max) {
+            return { ok: false, error: `${label}は 0〜${max} の範囲で入力してください。` };
+        }
+        return { ok: true, value };
+    }
+
+    function parseSignedInput(raw, min, max, label) {
+        const text = raw.trim();
+        if (text === '') return { ok: false, error: `${label}を入力してください。` };
+        if (!/^[+-]?\d+$/.test(text)) return { ok: false, error: `${label}は整数で入力してください。` };
+        const value = Number(text);
+        if (!Number.isInteger(value) || value < min || value > max) {
+            return { ok: false, error: `${label}は ${min}〜${max} の範囲で入力してください。` };
+        }
+        return { ok: true, value };
+    }
+
+    function parseRegisterList(raw) {
+        const tokens = raw.split(/[\s,;/]+/).filter(Boolean);
+        if (!tokens.length) return { ok: false, error: '書込レジスタ値を入力してください。' };
+
+        const values = [];
+        for (const token of tokens) {
+            const parsed = parseUnsignedInput(token, 65535, 'レジスタ値');
+            if (!parsed.ok) return parsed;
+            values.push(parsed.value);
+        }
+        return { ok: true, values };
+    }
+
+    function parseCoilToken(token) {
+        const normalized = token.trim().toLowerCase();
+        if (['1', 'on', 'true'].includes(normalized)) return { ok: true, value: true };
+        if (['0', 'off', 'false'].includes(normalized)) return { ok: true, value: false };
+        const parsed = parseUnsignedInput(token, 1, 'コイル値');
+        if (!parsed.ok) return { ok: false, error: 'コイル値は 1/0 または ON/OFF で入力してください。' };
+        return { ok: true, value: parsed.value === 1 };
+    }
+
+    function parseCoilList(raw) {
+        const tokens = raw.split(/[\s,;/]+/).filter(Boolean);
+        if (!tokens.length) return { ok: false, error: 'コイル値を 1,0,1 の形式で入力してください。' };
+        const values = [];
+        for (const token of tokens) {
+            const parsed = parseCoilToken(token);
+            if (!parsed.ok) return parsed;
+            values.push(parsed.value);
+        }
+        return { ok: true, values };
+    }
+
+    function modbusCRC(bytes) {
+        let crc = 0xFFFF;
+        for (const byte of bytes) {
+            crc ^= byte;
+            for (let i = 0; i < 8; i += 1) {
+                if ((crc & 0x0001) !== 0) {
+                    crc = (crc >>> 1) ^ 0xA001;
+                } else {
+                    crc >>>= 1;
+                }
+            }
+        }
+        return crc & 0xFFFF;
+    }
+
+    function setTableText(ids, value = '-') {
+        ids.forEach((id) => resetText(id, value));
+    }
+
+    function resetModbusFrameBuild() {
+        resetText('mf_request');
+        setTableText(['mf_b_transport', 'mf_b_fc', 'mf_b_addr', 'mf_b_qty', 'mf_b_pdu', 'mf_b_check']);
+    }
+
+    function resetModbusFrameParse() {
+        setTableText(['mf_r_transport', 'mf_r_unit', 'mf_r_fc', 'mf_r_kind', 'mf_r_addr', 'mf_r_qty', 'mf_r_data', 'mf_r_check']);
+    }
+
+    function updateModbusFrameFieldState() {
+        const mode = $('mf_mode').value;
+        const fc = Number($('mf_fc').value);
+        const tid = $('mf_tid');
+        const qty = $('mf_qty');
+        const values = $('mf_values');
+
+        tid.disabled = mode !== 'tcp';
+        qty.disabled = [5, 6, 15, 16].includes(fc) && fc !== 15 && fc !== 16;
+
+        if ([1, 2, 3, 4].includes(fc)) {
+            qty.disabled = false;
+            values.placeholder = '読取系では未使用です';
+        } else if (fc === 5) {
+            values.placeholder = '例: ON / OFF / 1 / 0 / 0xFF00';
+        } else if (fc === 6) {
+            values.placeholder = '例: 1234 / 0x04D2';
+        } else if (fc === 15) {
+            qty.disabled = true;
+            values.placeholder = '例: 1,0,1,1,0';
+        } else if (fc === 16) {
+            qty.disabled = true;
+            values.placeholder = '例: 100,200,300 / 0x0001,0x0002';
+        }
+    }
+
+    function buildModbusFrame() {
+        updateModbusFrameFieldState();
+
+        const mode = $('mf_mode').value;
+        const fc = Number($('mf_fc').value);
+        const unitParsed = parseUnsignedInput($('mf_unit').value, 255, 'Unit / Slave ID');
+        const addrParsed = parseUnsignedInput($('mf_addr').value, 65535, '開始アドレス');
+
+        if (!unitParsed.ok) {
+            resetModbusFrameBuild();
+            setStatus('mf_status', unitParsed.error, 'error');
+            return;
+        }
+        if (!addrParsed.ok) {
+            resetModbusFrameBuild();
+            setStatus('mf_status', addrParsed.error, 'error');
+            return;
+        }
+
+        const pdu = [fc];
+        let qtyLabel = '-';
+        let checkLabel = '-';
+
+        if ([1, 2, 3, 4].includes(fc)) {
+            const maxQty = fc <= 2 ? 2000 : 125;
+            const qtyParsed = parseUnsignedInput($('mf_qty').value, maxQty, '数量');
+            if (!qtyParsed.ok || qtyParsed.value === 0) {
+                resetModbusFrameBuild();
+                setStatus('mf_status', `読取数量は 1〜${maxQty} で入力してください。`, 'error');
+                return;
+            }
+            pdu.push((addrParsed.value >> 8) & 0xFF, addrParsed.value & 0xFF, (qtyParsed.value >> 8) & 0xFF, qtyParsed.value & 0xFF);
+            qtyLabel = `${qtyParsed.value} 点`;
+        } else if (fc === 5) {
+            const coilRaw = $('mf_values').value.trim();
+            if (coilRaw === '') {
+                resetModbusFrameBuild();
+                setStatus('mf_status', '05 では ON/OFF または 1/0 を入力してください。', 'error');
+                return;
+            }
+            let coilParsed;
+            if (/^(?:on|off|true|false|0|1)$/i.test(coilRaw)) {
+                coilParsed = parseCoilToken(coilRaw);
+            } else if (/^0x/i.test(coilRaw) || /^[0-9A-Fa-f]+$/.test(coilRaw)) {
+                coilParsed = parseUnsignedInput(coilRaw, 65535, 'コイル値');
+            } else {
+                coilParsed = { ok: false };
+            }
+
+            let coilWord;
+            if (coilParsed.ok && typeof coilParsed.value === 'boolean') {
+                coilWord = coilParsed.value ? 0xFF00 : 0x0000;
+            } else if (coilParsed.ok && Number.isInteger(coilParsed.value)) {
+                coilWord = coilParsed.value === 0 ? 0x0000 : 0xFF00;
+            } else {
+                resetModbusFrameBuild();
+                setStatus('mf_status', '05 では ON/OFF または 1/0 を入力してください。', 'error');
+                return;
+            }
+            pdu.push((addrParsed.value >> 8) & 0xFF, addrParsed.value & 0xFF, (coilWord >> 8) & 0xFF, coilWord & 0xFF);
+            qtyLabel = coilWord === 0xFF00 ? 'Coil ON (0xFF00)' : 'Coil OFF (0x0000)';
+        } else if (fc === 6) {
+            const valueParsed = parseUnsignedInput($('mf_values').value, 65535, 'レジスタ値');
+            if (!valueParsed.ok) {
+                resetModbusFrameBuild();
+                setStatus('mf_status', valueParsed.error, 'error');
+                return;
+            }
+            pdu.push((addrParsed.value >> 8) & 0xFF, addrParsed.value & 0xFF, (valueParsed.value >> 8) & 0xFF, valueParsed.value & 0xFF);
+            qtyLabel = `1 ワード = ${valueParsed.value} (0x${valueParsed.value.toString(16).toUpperCase().padStart(4, '0')})`;
+        } else if (fc === 15) {
+            const coilList = parseCoilList($('mf_values').value);
+            if (!coilList.ok) {
+                resetModbusFrameBuild();
+                setStatus('mf_status', coilList.error, 'error');
+                return;
+            }
+            const quantity = coilList.values.length;
+            const byteCount = Math.ceil(quantity / 8);
+            const data = new Array(byteCount).fill(0);
+            coilList.values.forEach((value, index) => {
+                if (value) data[Math.floor(index / 8)] |= (1 << (index % 8));
+            });
+            pdu.push((addrParsed.value >> 8) & 0xFF, addrParsed.value & 0xFF, (quantity >> 8) & 0xFF, quantity & 0xFF, byteCount, ...data);
+            $('mf_qty').value = String(quantity);
+            qtyLabel = `${quantity} 点 [${coilList.values.map((v) => (v ? 1 : 0)).join(',')}]`;
+        } else if (fc === 16) {
+            const registerList = parseRegisterList($('mf_values').value);
+            if (!registerList.ok) {
+                resetModbusFrameBuild();
+                setStatus('mf_status', registerList.error, 'error');
+                return;
+            }
+            const quantity = registerList.values.length;
+            const byteCount = quantity * 2;
+            pdu.push((addrParsed.value >> 8) & 0xFF, addrParsed.value & 0xFF, (quantity >> 8) & 0xFF, quantity & 0xFF, byteCount);
+            registerList.values.forEach((value) => pdu.push((value >> 8) & 0xFF, value & 0xFF));
+            $('mf_qty').value = String(quantity);
+            qtyLabel = `${quantity} ワード [${registerList.values.map((v) => `0x${v.toString(16).toUpperCase().padStart(4, '0')}`).join(', ')}]`;
+        }
+
+        let frame = [];
+        if (mode === 'rtu') {
+            frame = [unitParsed.value, ...pdu];
+            const crc = modbusCRC(frame);
+            frame.push(crc & 0xFF, (crc >> 8) & 0xFF);
+            checkLabel = `CRC16 = 0x${crc.toString(16).toUpperCase().padStart(4, '0')} (Lo/Hi付加)`;
+        } else {
+            const tidParsed = parseUnsignedInput($('mf_tid').value, 65535, 'Transaction ID');
+            if (!tidParsed.ok) {
+                resetModbusFrameBuild();
+                setStatus('mf_status', tidParsed.error, 'error');
+                return;
+            }
+            const length = pdu.length + 1;
+            frame = [
+                (tidParsed.value >> 8) & 0xFF, tidParsed.value & 0xFF,
+                0x00, 0x00,
+                (length >> 8) & 0xFF, length & 0xFF,
+                unitParsed.value,
+                ...pdu
+            ];
+            checkLabel = `MBAP Length = ${length} Byte, Protocol ID = 0x0000`;
+        }
+
+        $('mf_request').textContent = bytesToHex(frame);
+        resetText('mf_b_transport', mode === 'rtu' ? 'Modbus RTU' : 'Modbus TCP');
+        resetText('mf_b_fc', MODBUS_FUNCTION_LABELS[fc] || `0x${fc.toString(16).toUpperCase().padStart(2, '0')}`);
+        resetText('mf_b_addr', `${addrParsed.value} (0x${addrParsed.value.toString(16).toUpperCase().padStart(4, '0')})`);
+        resetText('mf_b_qty', qtyLabel);
+        resetText('mf_b_pdu', bytesToHex(pdu));
+        resetText('mf_b_check', checkLabel);
+        setStatus('mf_status', '要求フレームを生成しました。', 'ok');
+    }
+
+    function formatRegisterData(bytes) {
+        if (!bytes.length) return '-';
+        if (bytes.length % 2 !== 0) return bytesToHex(bytes);
+        const words = [];
+        for (let i = 0; i < bytes.length; i += 2) {
+            const value = (bytes[i] << 8) | bytes[i + 1];
+            words.push(`0x${value.toString(16).toUpperCase().padStart(4, '0')}`);
+        }
+        return words.join(', ');
+    }
+
+    function formatCoilData(bytes, bitCount = null) {
+        const bits = [];
+        bytes.forEach((byte) => {
+            for (let i = 0; i < 8; i += 1) bits.push(((byte >> i) & 1) === 1 ? '1' : '0');
+        });
+        return (bitCount ? bits.slice(0, bitCount) : bits).join(', ');
+    }
+
+    function parseModbusFrame() {
+        const raw = $('mf_parse_raw').value.trim();
+        const selectedMode = $('mf_parse_mode').value;
+
+        if (raw === '') {
+            resetModbusFrameParse();
+            setStatus('mf_parse_status', '生フレームを入力すると Unit ID / Function / 開始アドレス / 数量 / CRC/MBAP を解析します。', '');
+            return;
+        }
+
+        const normalized = normalizeHexBytes(raw);
+        if (!normalized.ok) {
+            resetModbusFrameParse();
+            setStatus('mf_parse_status', normalized.error, 'error');
+            return;
+        }
+
+        let mode = selectedMode;
+        if (mode === 'auto') {
+            const bytes = normalized.bytes;
+            if (bytes.length >= 8) {
+                const lenField = (bytes[4] << 8) | bytes[5];
+                mode = bytes[2] === 0x00 && bytes[3] === 0x00 && bytes.length === lenField + 6 ? 'tcp' : 'rtu';
+            } else {
+                mode = 'rtu';
+            }
+        }
+
+        const bytes = normalized.bytes;
+        let unit;
+        let pdu;
+        let checkText;
+        let transportText;
+
+        if (mode === 'tcp') {
+            if (bytes.length < 8) {
+                resetModbusFrameParse();
+                setStatus('mf_parse_status', 'Modbus TCP フレームは最低 8 Byte 必要です。', 'error');
+                return;
+            }
+            const transaction = (bytes[0] << 8) | bytes[1];
+            const protocol = (bytes[2] << 8) | bytes[3];
+            const lenField = (bytes[4] << 8) | bytes[5];
+            unit = bytes[6];
+            pdu = bytes.slice(7);
+            const totalMatch = bytes.length === lenField + 6;
+            transportText = `Modbus TCP / TID=0x${transaction.toString(16).toUpperCase().padStart(4, '0')}`;
+            checkText = `Protocol ID=0x${protocol.toString(16).toUpperCase().padStart(4, '0')}, Length=${lenField}${totalMatch ? ' (一致)' : ` / 実長=${bytes.length - 6}`}`;
+        } else {
+            if (bytes.length < 4) {
+                resetModbusFrameParse();
+                setStatus('mf_parse_status', 'Modbus RTU フレームは最低 4 Byte 必要です。', 'error');
+                return;
+            }
+            const body = bytes.slice(0, -2);
+            const crcRx = bytes[bytes.length - 2] | (bytes[bytes.length - 1] << 8);
+            const crcCalc = modbusCRC(body);
+            unit = body[0];
+            pdu = body.slice(1);
+            transportText = 'Modbus RTU';
+            checkText = `CRC受信=0x${crcRx.toString(16).toUpperCase().padStart(4, '0')} / CRC計算=0x${crcCalc.toString(16).toUpperCase().padStart(4, '0')} ${crcRx === crcCalc ? '(OK)' : '(NG)'}`;
+        }
+
+        if (!pdu.length) {
+            resetModbusFrameParse();
+            setStatus('mf_parse_status', 'Function Code を含む PDU が見つかりません。', 'error');
+            return;
+        }
+
+        const rawFc = pdu[0];
+        const fc = rawFc & 0x7F;
+        const isException = (rawFc & 0x80) !== 0;
+        let kindText = '-';
+        let addrText = '-';
+        let qtyText = '-';
+        let dataText = '-';
+
+        if (isException) {
+            const exceptionCode = pdu[1];
+            kindText = '例外応答';
+            qtyText = `Exception Code = 0x${(exceptionCode ?? 0).toString(16).toUpperCase().padStart(2, '0')}`;
+            dataText = MODBUS_EXCEPTION_LABELS[exceptionCode] || 'Unknown Exception';
+        } else if ([1, 2, 3, 4].includes(fc)) {
+            if (pdu.length === 5) {
+                const addr = (pdu[1] << 8) | pdu[2];
+                const qty = (pdu[3] << 8) | pdu[4];
+                kindText = '読取要求';
+                addrText = `${addr} (0x${addr.toString(16).toUpperCase().padStart(4, '0')})`;
+                qtyText = `${qty} 点`;
+            } else {
+                const byteCount = pdu[1] ?? 0;
+                const data = pdu.slice(2);
+                kindText = '読取応答';
+                qtyText = `Byte Count = ${byteCount}`;
+                dataText = fc <= 2 ? formatCoilData(data) : formatRegisterData(data);
+            }
+        } else if ([5, 6].includes(fc)) {
+            if (pdu.length >= 5) {
+                const addr = (pdu[1] << 8) | pdu[2];
+                const value = (pdu[3] << 8) | pdu[4];
+                kindText = fc === 5 ? '単一コイル書込要求/応答' : '単一レジスタ書込要求/応答';
+                addrText = `${addr} (0x${addr.toString(16).toUpperCase().padStart(4, '0')})`;
+                qtyText = fc === 5
+                    ? (value === 0xFF00 ? 'Coil ON (0xFF00)' : `Coil OFF/Raw (0x${value.toString(16).toUpperCase().padStart(4, '0')})`)
+                    : `${value} (0x${value.toString(16).toUpperCase().padStart(4, '0')})`;
+            }
+        } else if ([15, 16].includes(fc)) {
+            if (pdu.length > 5) {
+                const addr = (pdu[1] << 8) | pdu[2];
+                const qty = (pdu[3] << 8) | pdu[4];
+                const byteCount = pdu[5];
+                const data = pdu.slice(6);
+                kindText = fc === 15 ? '複数コイル書込要求' : '複数レジスタ書込要求';
+                addrText = `${addr} (0x${addr.toString(16).toUpperCase().padStart(4, '0')})`;
+                qtyText = `${qty} 点 / Byte Count = ${byteCount}`;
+                dataText = fc === 15 ? formatCoilData(data, qty) : formatRegisterData(data);
+            } else if (pdu.length === 5) {
+                const addr = (pdu[1] << 8) | pdu[2];
+                const qty = (pdu[3] << 8) | pdu[4];
+                kindText = fc === 15 ? '複数コイル書込応答' : '複数レジスタ書込応答';
+                addrText = `${addr} (0x${addr.toString(16).toUpperCase().padStart(4, '0')})`;
+                qtyText = `${qty} 点`;
+            }
+        } else {
+            kindText = '未対応 Function';
+            dataText = bytesToHex(pdu.slice(1));
+        }
+
+        resetText('mf_r_transport', transportText);
+        resetText('mf_r_unit', `${unit} (0x${unit.toString(16).toUpperCase().padStart(2, '0')})`);
+        resetText('mf_r_fc', MODBUS_FUNCTION_LABELS[fc] || `0x${rawFc.toString(16).toUpperCase().padStart(2, '0')}`);
+        resetText('mf_r_kind', kindText);
+        resetText('mf_r_addr', addrText);
+        resetText('mf_r_qty', qtyText);
+        resetText('mf_r_data', dataText);
+        resetText('mf_r_check', checkText);
+        setStatus('mf_parse_status', `フレームを ${mode === 'tcp' ? 'Modbus TCP' : 'Modbus RTU'} として解析しました。`, 'ok');
+    }
+
+    function toPrintableAscii(bytes) {
+        return bytes.map((byte) => (byte >= 32 && byte <= 126 ? String.fromCharCode(byte) : '.')).join('');
+    }
+
+    function groupBinary(bin, size = 4) {
+        return bin.replace(new RegExp(`(.{${size}})`, 'g'), '$1 ').trim();
+    }
+
+    function resetDataCenter16() {
+        setTableText(['d16_bin', 'd16_bcd', 'd16_ascii']);
+    }
+
+    function updateData16(source) {
+        let uintValue;
+
+        if (source === 'hex') {
+            const cleaned = sanitizeHex($('d16_hex').value);
+            $('d16_hex').value = cleaned;
+            if (cleaned === '') {
+                $('d16_uint').value = '';
+                $('d16_int').value = '';
+                resetDataCenter16();
+                setStatus('d16_status', 'Hex / UINT16 / INT16 のどれかを入力してください。', '');
+                return;
+            }
+            if (!/^[0-9A-F]{1,4}$/.test(cleaned)) {
+                resetDataCenter16();
+                setStatus('d16_status', 'Hex は 1〜4 桁の [0-9A-F] で入力してください。', 'error');
+                return;
+            }
+            uintValue = Number.parseInt(cleaned, 16);
+        } else if (source === 'uint') {
+            const parsed = parseUnsignedInput($('d16_uint').value, 65535, 'UINT16');
+            if (!parsed.ok) {
+                resetDataCenter16();
+                setStatus('d16_status', parsed.error, 'error');
+                return;
+            }
+            uintValue = parsed.value;
+        } else {
+            const parsed = parseSignedInput($('d16_int').value, -32768, 32767, 'INT16');
+            if (!parsed.ok) {
+                resetDataCenter16();
+                setStatus('d16_status', parsed.error, 'error');
+                return;
+            }
+            uintValue = parsed.value < 0 ? parsed.value + 0x10000 : parsed.value;
+        }
+
+        const intValue = uintValue >= 0x8000 ? uintValue - 0x10000 : uintValue;
+        const hexValue = uintValue.toString(16).toUpperCase().padStart(4, '0');
+        const bytes = [(uintValue >> 8) & 0xFF, uintValue & 0xFF];
+        const bcdValid = hexValue.split('').every((char) => '0123456789'.includes(char));
+
+        $('d16_hex').value = hexValue;
+        $('d16_uint').value = String(uintValue);
+        $('d16_int').value = String(intValue);
+        resetText('d16_bin', groupBinary(uintValue.toString(2).padStart(16, '0')));
+        resetText('d16_bcd', bcdValid ? String(Number(hexValue)) : '無効BCD');
+        resetText('d16_ascii', toPrintableAscii(bytes));
+        setStatus('d16_status', '16bit データを相互変換しました。', 'ok');
+    }
+
+    function rawToCanonical32(rawBytes, order) {
+        const map = BYTE_ORDER_MAPS_32[order];
+        const canonical = new Array(4);
+        rawBytes.forEach((value, index) => {
+            canonical[map[index]] = value;
+        });
+        return canonical;
+    }
+
+    function canonicalToRaw32(canonicalBytes, order) {
+        const map = BYTE_ORDER_MAPS_32[order];
+        return map.map((index) => canonicalBytes[index]);
+    }
+
+    let d32LastSource = 'hex';
+
+    function resetDataCenter32() {
+        setTableText(['d32_abcd', 'd32_words', 'd32_ascii', 'd32_bin']);
+    }
+
+    function updateData32(source = d32LastSource) {
+        d32LastSource = source;
+        const order = $('d32_order').value;
+        const buffer = new ArrayBuffer(4);
+        const view = new DataView(buffer);
+        let canonicalBytes;
+
+        if (source === 'hex') {
+            const cleaned = sanitizeHex($('d32_hex').value);
+            $('d32_hex').value = cleaned;
+            if (cleaned === '') {
+                $('d32_uint').value = '';
+                $('d32_int').value = '';
+                $('d32_float').value = '';
+                resetDataCenter32();
+                setStatus('d32_status', 'Hex / UDINT / DINT / REAL のどれかを入力してください。', '');
+                return;
+            }
+            if (!/^[0-9A-F]{8}$/.test(cleaned)) {
+                resetDataCenter32();
+                setStatus('d32_status', 'Hex は 8 桁で入力してください。', 'error');
+                return;
+            }
+            const rawBytes = [];
+            for (let i = 0; i < cleaned.length; i += 2) rawBytes.push(Number.parseInt(cleaned.slice(i, i + 2), 16));
+            canonicalBytes = rawToCanonical32(rawBytes, order);
+        } else if (source === 'uint') {
+            const parsed = parseUnsignedInput($('d32_uint').value, 4294967295, 'UDINT / UINT32');
+            if (!parsed.ok) {
+                resetDataCenter32();
+                setStatus('d32_status', parsed.error, 'error');
+                return;
+            }
+            view.setUint32(0, parsed.value >>> 0, false);
+            canonicalBytes = Array.from(new Uint8Array(buffer));
+        } else if (source === 'int') {
+            const parsed = parseSignedInput($('d32_int').value, -2147483648, 2147483647, 'DINT / INT32');
+            if (!parsed.ok) {
+                resetDataCenter32();
+                setStatus('d32_status', parsed.error, 'error');
+                return;
+            }
+            view.setInt32(0, parsed.value, false);
+            canonicalBytes = Array.from(new Uint8Array(buffer));
+        } else {
+            const raw = $('d32_float').value.trim();
+            if (raw === '') {
+                $('d32_hex').value = '';
+                $('d32_uint').value = '';
+                $('d32_int').value = '';
+                resetDataCenter32();
+                setStatus('d32_status', 'Hex / UDINT / DINT / REAL のどれかを入力してください。', '');
+                return;
+            }
+            const value = Number(raw);
+            if (!Number.isFinite(value)) {
+                resetDataCenter32();
+                setStatus('d32_status', 'REAL / Float32 は数値で入力してください。', 'error');
+                return;
+            }
+            view.setFloat32(0, value, false);
+            canonicalBytes = Array.from(new Uint8Array(buffer));
+        }
+
+        const canonicalHex = canonicalBytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+        const rawBytes = canonicalToRaw32(canonicalBytes, order);
+        const rawHex = rawBytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+        canonicalBytes.forEach((byte, index) => view.setUint8(index, byte));
+
+        const uintValue = view.getUint32(0, false);
+        const intValue = view.getInt32(0, false);
+        const floatValue = view.getFloat32(0, false);
+
+        $('d32_hex').value = rawHex;
+        $('d32_uint').value = String(uintValue >>> 0);
+        $('d32_int').value = String(intValue);
+        $('d32_float').value = Number.isFinite(floatValue) ? Number.parseFloat(floatValue.toPrecision(7)).toString() : String(floatValue);
+        resetText('d32_abcd', canonicalHex);
+        resetText('d32_words', `Hi=0x${canonicalHex.slice(0, 4)} / Lo=0x${canonicalHex.slice(4, 8)}`);
+        resetText('d32_ascii', toPrintableAscii(rawBytes));
+        resetText('d32_bin', groupBinary(uintValue.toString(2).padStart(32, '0'), 4));
+        setStatus('d32_status', '32bit データを相互変換しました。', 'ok');
+    }
+
+    const UINT64_MAX = (1n << 64n) - 1n;
+    const INT64_MAX = (1n << 63n) - 1n;
+    const INT64_MIN = -(1n << 63n);
+
+    function bytesToBigInt(bytes) {
+        return bytes.reduce((acc, byte) => (acc << 8n) | BigInt(byte), 0n);
+    }
+
+    function bigIntToBytes(value, length) {
+        let current = value;
+        const bytes = new Array(length).fill(0);
+        for (let i = length - 1; i >= 0; i -= 1) {
+            bytes[i] = Number(current & 0xFFn);
+            current >>= 8n;
+        }
+        return bytes;
+    }
+
+    function resetDataCenter64() {
+        setTableText(['d64_ascii', 'd64_words']);
+    }
+
+    function updateData64(source) {
+        const buffer = new ArrayBuffer(8);
+        const view = new DataView(buffer);
+        let bytes;
+
+        if (source === 'hex') {
+            const cleaned = sanitizeHex($('d64_hex').value);
+            $('d64_hex').value = cleaned;
+            if (cleaned === '') {
+                $('d64_uint').value = '';
+                $('d64_int').value = '';
+                $('d64_float').value = '';
+                resetDataCenter64();
+                setStatus('d64_status', 'Hex / ULINT / LINT / LREAL のどれかを入力してください。', '');
+                return;
+            }
+            if (!/^[0-9A-F]{16}$/.test(cleaned)) {
+                resetDataCenter64();
+                setStatus('d64_status', 'Hex は 16 桁で入力してください。', 'error');
+                return;
+            }
+            bytes = [];
+            for (let i = 0; i < cleaned.length; i += 2) bytes.push(Number.parseInt(cleaned.slice(i, i + 2), 16));
+        } else if (source === 'uint') {
+            const raw = $('d64_uint').value.trim();
+            if (!/^\d+$/.test(raw)) {
+                resetDataCenter64();
+                setStatus('d64_status', 'ULINT / UINT64 は 10進整数で入力してください。', 'error');
+                return;
+            }
+            const value = BigInt(raw);
+            if (value < 0n || value > UINT64_MAX) {
+                resetDataCenter64();
+                setStatus('d64_status', 'ULINT / UINT64 は 0〜18446744073709551615 の範囲です。', 'error');
+                return;
+            }
+            bytes = bigIntToBytes(value, 8);
+        } else if (source === 'int') {
+            const raw = $('d64_int').value.trim();
+            if (!/^[+-]?\d+$/.test(raw)) {
+                resetDataCenter64();
+                setStatus('d64_status', 'LINT / INT64 は 10進整数で入力してください。', 'error');
+                return;
+            }
+            const value = BigInt(raw);
+            if (value < INT64_MIN || value > INT64_MAX) {
+                resetDataCenter64();
+                setStatus('d64_status', 'LINT / INT64 は -9223372036854775808〜9223372036854775807 の範囲です。', 'error');
+                return;
+            }
+            const unsigned = value < 0n ? (1n << 64n) + value : value;
+            bytes = bigIntToBytes(unsigned, 8);
+        } else {
+            const raw = $('d64_float').value.trim();
+            if (raw === '') {
+                $('d64_hex').value = '';
+                $('d64_uint').value = '';
+                $('d64_int').value = '';
+                resetDataCenter64();
+                setStatus('d64_status', 'Hex / ULINT / LINT / LREAL のどれかを入力してください。', '');
+                return;
+            }
+            const value = Number(raw);
+            if (!Number.isFinite(value)) {
+                resetDataCenter64();
+                setStatus('d64_status', 'LREAL / Float64 は数値で入力してください。', 'error');
+                return;
+            }
+            view.setFloat64(0, value, false);
+            bytes = Array.from(new Uint8Array(buffer));
+        }
+
+        bytes.forEach((byte, index) => view.setUint8(index, byte));
+        const uintValue = bytesToBigInt(bytes);
+        const intValue = uintValue > INT64_MAX ? uintValue - (1n << 64n) : uintValue;
+        const floatValue = view.getFloat64(0, false);
+        const hexValue = bytes.map((b) => b.toString(16).toUpperCase().padStart(2, '0')).join('');
+
+        $('d64_hex').value = hexValue;
+        $('d64_uint').value = uintValue.toString();
+        $('d64_int').value = intValue.toString();
+        $('d64_float').value = Number.isFinite(floatValue) ? formatNumber(floatValue, 12) : String(floatValue);
+        resetText('d64_ascii', toPrintableAscii(bytes));
+        resetText('d64_words', `Hi=0x${hexValue.slice(0, 8)} / Lo=0x${hexValue.slice(8, 16)}`);
+        setStatus('d64_status', '64bit データを相互変換しました。', 'ok');
+    }
+
+    function getOptionalNumber(id, label) {
+        const raw = getTextValue(id);
+        if (raw === '') return { ok: true, value: null };
+        const value = Number(raw);
+        if (!Number.isFinite(value)) return { ok: false, error: `${label} が不正です。` };
+        return { ok: true, value };
+    }
+
+    function getAlarmConfig() {
+        const sigMin = Number($('al_aMin').value);
+        const sigMax = Number($('al_aMax').value);
+        const pvMin = Number($('al_pMin').value);
+        const pvMax = Number($('al_pMax').value);
+        const dmin = Number($('al_dMin').value);
+        const dmax = Number($('al_dMax').value);
+        const sigUnit = getTextValue('al_sigUnit');
+        const pvUnit = getTextValue('al_pvUnit');
+
+        if (![sigMin, sigMax, pvMin, pvMax, dmin, dmax].every(Number.isFinite)) {
+            return { error: '入力信号レンジ・計測対象レンジ・PLC生値レンジを数値で入力してください。' };
+        }
+        if (sigMin === sigMax) return { error: '入力信号の最小値と最大値は同じにできません。' };
+        if (pvMin === pvMax) return { error: '計測対象の最小値と最大値は同じにできません。' };
+        if (dmin === dmax) return { error: 'PLC生値の最小値と最大値は同じにできません。' };
+
+        const hyst = Number($('al_hyst').value);
+        if (!Number.isFinite(hyst) || hyst < 0) return { error: 'ヒステリシス (計測値) は 0 以上の数値で入力してください。' };
+
+        const wireHyst = Number($('al_wireHyst').value);
+        if (!Number.isFinite(wireHyst) || wireHyst < 0) return { error: 'Wire Break 復帰ヒステリシス (入力信号) は 0 以上の数値で入力してください。' };
+
+        const hh = getOptionalNumber('al_hh', 'HH');
+        const h = getOptionalNumber('al_h', 'H');
+        const l = getOptionalNumber('al_l', 'L');
+        const ll = getOptionalNumber('al_ll', 'LL');
+        const wire = getOptionalNumber('al_wire', 'Wire Break');
+
+        for (const parsed of [hh, h, l, ll, wire]) {
+            if (!parsed.ok) return { error: parsed.error };
+        }
+
+        const values = { hh: hh.value, h: h.value, l: l.value, ll: ll.value, wire: wire.value, hyst, wireHyst };
+        if (values.hh !== null && values.h !== null && values.hh <= values.h) return { error: 'HH は H より大きくしてください。' };
+        if (values.h !== null && values.l !== null && values.h <= values.l) return { error: 'H は L より大きくしてください。' };
+        if (values.l !== null && values.ll !== null && values.l <= values.ll) return { error: 'L は LL より大きくしてください。' };
+
+        return { sigMin, sigMax, pvMin, pvMax, dmin, dmax, sigUnit, pvUnit, ...values };
+    }
+
+    function setAlarmRowValues(prefix, tripPv, tripSignal, tripDigital, resetPv, resetSignal, resetDigital, cfg) {
+        if (tripPv === null || tripSignal === null || tripDigital === null) {
+            setTableText([`${prefix}_trip`, `${prefix}_trip_s`, `${prefix}_trip_d`, `${prefix}_reset`, `${prefix}_reset_s`, `${prefix}_reset_d`]);
+            return;
+        }
+        resetText(`${prefix}_trip`, formatValueWithUnit(tripPv, cfg.pvUnit));
+        resetText(`${prefix}_trip_s`, formatValueWithUnit(tripSignal, cfg.sigUnit));
+        resetText(`${prefix}_trip_d`, String(tripDigital));
+        if (resetPv === null || resetSignal === null || resetDigital === null) {
+            resetText(`${prefix}_reset`, '-');
+            resetText(`${prefix}_reset_s`, '-');
+            resetText(`${prefix}_reset_d`, '-');
+            return;
+        }
+        resetText(`${prefix}_reset`, formatValueWithUnit(resetPv, cfg.pvUnit));
+        resetText(`${prefix}_reset_s`, formatValueWithUnit(resetSignal, cfg.sigUnit));
+        resetText(`${prefix}_reset_d`, String(resetDigital));
+    }
+
+    function fillAlarmProcessRow(prefix, tripPv, resetPv, cfg) {
+        if (tripPv === null || tripPv === undefined || !Number.isFinite(tripPv)) {
+            setAlarmRowValues(prefix, null, null, null, null, null, null, cfg);
+            return;
+        }
+        const tripSignal = pvToSignal(tripPv, cfg);
+        const tripDigital = signalToDigital(tripSignal, cfg);
+        const resetSignal = resetPv === null || resetPv === undefined || !Number.isFinite(resetPv) ? null : pvToSignal(resetPv, cfg);
+        const resetDigital = resetSignal === null ? null : signalToDigital(resetSignal, cfg);
+        setAlarmRowValues(prefix, tripPv, tripSignal, tripDigital, resetPv, resetSignal, resetDigital, cfg);
+    }
+
+    function fillAlarmWireRow(prefix, tripSignal, resetSignal, cfg) {
+        if (tripSignal === null || tripSignal === undefined || !Number.isFinite(tripSignal)) {
+            setAlarmRowValues(prefix, null, null, null, null, null, null, cfg);
+            return;
+        }
+        const tripPv = signalToPV(tripSignal, cfg);
+        const tripDigital = signalToDigital(tripSignal, cfg);
+        const resetPv = resetSignal === null || resetSignal === undefined || !Number.isFinite(resetSignal) ? null : signalToPV(resetSignal, cfg);
+        const resetDigital = resetSignal === null ? null : signalToDigital(resetSignal, cfg);
+        setAlarmRowValues(prefix, tripPv, tripSignal, tripDigital, resetPv, resetSignal, resetDigital, cfg);
+    }
+
+    function resetAlarmRows() {
+        setTableText([
+            'al_hh_trip', 'al_hh_trip_s', 'al_hh_trip_d', 'al_hh_reset', 'al_hh_reset_s', 'al_hh_reset_d',
+            'al_h_trip', 'al_h_trip_s', 'al_h_trip_d', 'al_h_reset', 'al_h_reset_s', 'al_h_reset_d',
+            'al_l_trip', 'al_l_trip_s', 'al_l_trip_d', 'al_l_reset', 'al_l_reset_s', 'al_l_reset_d',
+            'al_ll_trip', 'al_ll_trip_s', 'al_ll_trip_d', 'al_ll_reset', 'al_ll_reset_s', 'al_ll_reset_d',
+            'al_wire_trip', 'al_wire_trip_s', 'al_wire_trip_d', 'al_wire_reset', 'al_wire_reset_s', 'al_wire_reset_d'
+        ]);
+    }
+
+    function setAlarmLiveTags(items) {
+        const container = $('al_live_tags');
+        container.innerHTML = '';
+        items.forEach((item) => {
+            const span = document.createElement('span');
+            span.className = `pill ${item.type}`;
+            span.textContent = item.text;
+            container.appendChild(span);
+        });
+    }
+
+    let alLastEdited = 'pv';
+
+    function calcAlarm(source = alLastEdited) {
+        alLastEdited = source;
+        const cfg = getAlarmConfig();
+        if (cfg.error) {
+            resetAlarmRows();
+            setStatus('al_status', cfg.error, 'error');
+            setStatus('al_live_status', '現在値を評価できません。', 'warning');
+            setAlarmLiveTags([]);
+            return;
+        }
+
+        fillAlarmProcessRow('al_hh', cfg.hh, cfg.hh !== null ? cfg.hh - cfg.hyst : null, cfg);
+        fillAlarmProcessRow('al_h', cfg.h, cfg.h !== null ? cfg.h - cfg.hyst : null, cfg);
+        fillAlarmProcessRow('al_l', cfg.l, cfg.l !== null ? cfg.l + cfg.hyst : null, cfg);
+        fillAlarmProcessRow('al_ll', cfg.ll, cfg.ll !== null ? cfg.ll + cfg.hyst : null, cfg);
+        fillAlarmWireRow('al_wire', cfg.wire, cfg.wire !== null ? cfg.wire + cfg.wireHyst : null, cfg);
+
+        const pvRangeMin = Math.min(cfg.pvMin, cfg.pvMax);
+        const pvRangeMax = Math.max(cfg.pvMin, cfg.pvMax);
+        const sigRangeMin = Math.min(cfg.sigMin, cfg.sigMax);
+        const sigRangeMax = Math.max(cfg.sigMin, cfg.sigMax);
+        const warnings = [];
+
+        [['HH', cfg.hh], ['H', cfg.h], ['L', cfg.l], ['LL', cfg.ll]].forEach(([label, value]) => {
+            if (value !== null && (value < pvRangeMin || value > pvRangeMax)) warnings.push(`${label} が計測対象レンジ外`);
+        });
+        if (cfg.wire !== null && cfg.wire >= sigRangeMin && cfg.wire <= sigRangeMax) {
+            warnings.push('Wire Break が通常の入力信号レンジ内');
+        }
+
+        setStatus('al_status', warnings.length
+            ? `警報点を計算しました。注意: ${warnings.join(' / ')}`
+            : '警報動作点・復帰点を計算しました。', warnings.length ? 'warning' : 'ok');
+
+        const pvRaw = getTextValue('al_pv_pv');
+        const signalRaw = getTextValue('al_pv_a');
+        const digitalRaw = getTextValue('al_pv_d');
+        let pvValue = null;
+        let signalValue = null;
+        let digitalValue = null;
+
+        if (source === 'pv' && pvRaw === '') source = signalRaw !== '' ? 'a' : 'd';
+        if (source === 'a' && signalRaw === '') source = pvRaw !== '' ? 'pv' : 'd';
+        if (source === 'd' && digitalRaw === '') source = pvRaw !== '' ? 'pv' : 'a';
+
+        if (source === 'pv') {
+            if (pvRaw !== '') {
+                pvValue = Number(pvRaw);
+                if (!Number.isFinite(pvValue)) {
+                    setStatus('al_live_status', '現在値 (計測値) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                signalValue = pvToSignal(pvValue, cfg);
+                digitalValue = pvToDigital(pvValue, cfg);
+                $('al_pv_a').value = formatNumber(signalValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            } else if (signalRaw !== '') {
+                signalValue = Number(signalRaw);
+                if (!Number.isFinite(signalValue)) {
+                    setStatus('al_live_status', '現在値 (入力信号) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                pvValue = signalToPV(signalValue, cfg);
+                digitalValue = signalToDigital(signalValue, cfg);
+                $('al_pv_pv').value = formatNumber(pvValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            } else if (digitalRaw !== '') {
+                digitalValue = Number(digitalRaw);
+                if (!Number.isFinite(digitalValue)) {
+                    setStatus('al_live_status', '現在値 (PLC生値) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                signalValue = digitalToSignal(digitalValue, cfg);
+                pvValue = digitalToPV(digitalValue, cfg);
+                digitalValue = Math.round(digitalValue);
+                $('al_pv_pv').value = formatNumber(pvValue, 6);
+                $('al_pv_a').value = formatNumber(signalValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            }
+        } else if (source === 'a') {
+            if (signalRaw !== '') {
+                signalValue = Number(signalRaw);
+                if (!Number.isFinite(signalValue)) {
+                    setStatus('al_live_status', '現在値 (入力信号) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                pvValue = signalToPV(signalValue, cfg);
+                digitalValue = signalToDigital(signalValue, cfg);
+                $('al_pv_pv').value = formatNumber(pvValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            } else if (pvRaw !== '') {
+                pvValue = Number(pvRaw);
+                if (!Number.isFinite(pvValue)) {
+                    setStatus('al_live_status', '現在値 (計測値) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                signalValue = pvToSignal(pvValue, cfg);
+                digitalValue = pvToDigital(pvValue, cfg);
+                $('al_pv_a').value = formatNumber(signalValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            } else if (digitalRaw !== '') {
+                digitalValue = Number(digitalRaw);
+                if (!Number.isFinite(digitalValue)) {
+                    setStatus('al_live_status', '現在値 (PLC生値) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                signalValue = digitalToSignal(digitalValue, cfg);
+                pvValue = signalToPV(signalValue, cfg);
+                digitalValue = Math.round(digitalValue);
+                $('al_pv_pv').value = formatNumber(pvValue, 6);
+                $('al_pv_a').value = formatNumber(signalValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            }
+        } else {
+            if (digitalRaw !== '') {
+                digitalValue = Number(digitalRaw);
+                if (!Number.isFinite(digitalValue)) {
+                    setStatus('al_live_status', '現在値 (PLC生値) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                signalValue = digitalToSignal(digitalValue, cfg);
+                pvValue = digitalToPV(digitalValue, cfg);
+                digitalValue = Math.round(digitalValue);
+                $('al_pv_pv').value = formatNumber(pvValue, 6);
+                $('al_pv_a').value = formatNumber(signalValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            } else if (pvRaw !== '') {
+                pvValue = Number(pvRaw);
+                if (!Number.isFinite(pvValue)) {
+                    setStatus('al_live_status', '現在値 (計測値) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                signalValue = pvToSignal(pvValue, cfg);
+                digitalValue = pvToDigital(pvValue, cfg);
+                $('al_pv_a').value = formatNumber(signalValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            } else if (signalRaw !== '') {
+                signalValue = Number(signalRaw);
+                if (!Number.isFinite(signalValue)) {
+                    setStatus('al_live_status', '現在値 (入力信号) が不正です。', 'error');
+                    setAlarmLiveTags([]);
+                    return;
+                }
+                pvValue = signalToPV(signalValue, cfg);
+                digitalValue = signalToDigital(signalValue, cfg);
+                $('al_pv_pv').value = formatNumber(pvValue, 6);
+                $('al_pv_d').value = String(digitalValue);
+            }
+        }
+
+        if (pvRaw === '' && signalRaw === '' && digitalRaw === '') {
+            setStatus('al_live_status', '現在値を入力すると、どの警報が動作するか即時評価します。', '');
+            setAlarmLiveTags([]);
+            return;
+        }
+
+        const ratio = linearRatio(pvValue, cfg.pvMin, cfg.pvMax);
+        const active = [];
+        if (ratio < 0 || ratio > 1) active.push({ text: 'PV RANGE OUT', type: 'warning' });
+        if (cfg.wire !== null && signalValue <= cfg.wire) active.push({ text: 'Wire Break', type: 'error' });
+        if (cfg.hh !== null && pvValue >= cfg.hh) {
+            active.push({ text: 'HH', type: 'error' });
+        } else if (cfg.h !== null && pvValue >= cfg.h) {
+            active.push({ text: 'H', type: 'warning' });
+        }
+        if (cfg.ll !== null && pvValue <= cfg.ll) {
+            active.push({ text: 'LL', type: 'error' });
+        } else if (cfg.l !== null && pvValue <= cfg.l) {
+            active.push({ text: 'L', type: 'warning' });
+        }
+        if (!active.length) active.push({ text: 'NORMAL', type: 'ok' });
+
+        setAlarmLiveTags(active);
+        setStatusHTML('al_live_status', `現在値: ${formatValueWithUnit(pvValue, cfg.pvUnit)} / 入力信号: ${formatValueWithUnit(signalValue, cfg.sigUnit)} / PLC生値: ${digitalValue}`, active.some((x) => x.type === 'error') ? 'error' : active.some((x) => x.type === 'warning') ? 'warning' : 'ok');
+    }
+
+    function copyScaleToAlarm() {
+        $('al_aMin').value = $('s_aMin').value;
+        $('al_aMax').value = $('s_aMax').value;
+        $('al_sigUnit').value = $('s_sigUnit').value;
+        $('al_pMin').value = $('s_pvMin').value;
+        $('al_pMax').value = $('s_pvMax').value;
+        $('al_pvUnit').value = $('s_pvUnit').value;
+        $('al_dMin').value = $('s_dMin').value;
+        $('al_dMax').value = $('s_dMax').value;
+        calcAlarm(alLastEdited);
+    }
+
+    function setAlarmScaling(sigMin, sigMax, dmin, dmax, sigUnit = '') {
+        $('al_aMin').value = sigMin;
+        $('al_aMax').value = sigMax;
+        $('al_dMin').value = dmin;
+        $('al_dMax').value = dmax;
+        if (sigUnit) $('al_sigUnit').value = sigUnit;
+        calcAlarm(alLastEdited);
+    }
+
+
+    ['mf_mode', 'mf_tid', 'mf_unit', 'mf_fc', 'mf_addr', 'mf_qty', 'mf_values'].forEach((id) => {
+        $(id).addEventListener('input', buildModbusFrame);
+        $(id).addEventListener('change', buildModbusFrame);
+    });
+    $('mf_parse_mode').addEventListener('change', parseModbusFrame);
+    $('mf_parse_raw').addEventListener('input', parseModbusFrame);
+
+    $('d16_hex').addEventListener('input', () => updateData16('hex'));
+    $('d16_uint').addEventListener('input', () => updateData16('uint'));
+    $('d16_int').addEventListener('input', () => updateData16('int'));
+
+    $('d32_hex').addEventListener('input', () => updateData32('hex'));
+    $('d32_uint').addEventListener('input', () => updateData32('uint'));
+    $('d32_int').addEventListener('input', () => updateData32('int'));
+    $('d32_float').addEventListener('input', () => updateData32('float'));
+    $('d32_order').addEventListener('change', () => {
+        updateData32(d32LastSource === 'hex' ? 'hex' : d32LastSource);
+    });
+
+    $('d64_hex').addEventListener('input', () => updateData64('hex'));
+    $('d64_uint').addEventListener('input', () => updateData64('uint'));
+    $('d64_int').addEventListener('input', () => updateData64('int'));
+    $('d64_float').addEventListener('input', () => updateData64('float'));
+
+    ['al_aMin', 'al_aMax', 'al_sigUnit', 'al_pMin', 'al_pMax', 'al_pvUnit', 'al_dMin', 'al_dMax', 'al_hh', 'al_h', 'al_l', 'al_ll', 'al_hyst', 'al_wire', 'al_wireHyst'].forEach((id) => {
+        $(id).addEventListener('input', () => calcAlarm(alLastEdited));
+    });
+    $('al_pv_pv').addEventListener('input', () => calcAlarm('pv'));
+    $('al_pv_a').addEventListener('input', () => calcAlarm('a'));
+    $('al_pv_d').addEventListener('input', () => calcAlarm('d'));
+    document.querySelectorAll('.alarm-preset').forEach((btn) => {
+        btn.addEventListener('click', () => {
+            setAlarmScaling(
+                Number(btn.dataset.amin),
+                Number(btn.dataset.amax),
+                Number(btn.dataset.dmin),
+                Number(btn.dataset.dmax),
+                btn.dataset.sigunit || ''
+            );
+        });
+    });
+    $('alarm-copy-scale').addEventListener('click', copyScaleToAlarm);
+
+
+    function init() {
+        populateCIDROptions();
+        createBitUI();
+        updateBitUI();
+        resetModbusTable();
+        clearFloatOutputs();
+        calcIP();
+        updateModbusFrameFieldState();
+        buildModbusFrame();
+        resetModbusFrameParse();
+        resetDataCenter16();
+        resetDataCenter32();
+        resetDataCenter64();
+        resetAlarmRows();
+        calcAlarm();
+    }
+
+    init();
+</script>
+</body>
+</html>
